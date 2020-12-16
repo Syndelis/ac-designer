@@ -1,0 +1,10 @@
+Estruturas de Dados
+    - Grafo (Nó, Aresta)
+    - Salvamento em Arquivos (XML)
+
+Interface Gráfica
+    - Janela Principal com Canvas
+    - Criação e Recuperação de Grafos
+    - Janela de Edição de Arestas
+
+Geração de Código
