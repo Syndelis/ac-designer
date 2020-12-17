@@ -104,8 +104,9 @@ class Base:
 class Node(Base, XMLable):
     
     lit = []
+    radius = 40
 
-    def __init__(self, x, y, name='', radius=40, highlight=True):
+    def __init__(self, x, y, name='', radius=-1, highlight=True):
 
         self.incoming: list[Edge] = []
         self.outgoing: list[Edge] = []
@@ -114,6 +115,8 @@ class Node(Base, XMLable):
         self.id = -1 # Adjusted by Graph
 
         self.pos = vec(x, y)
+
+        if radius < 0: radius = type(self).radius
         self.radius = radius
 
         type(self).unhighlight()

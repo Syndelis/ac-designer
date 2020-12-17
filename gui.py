@@ -13,7 +13,7 @@ import abc
 
 # Data
 from data import Graph, Node, Edge, find
-from vector import vec
+from vector import vec, Vector
 
 # ------------------------------------------------------------------------------
 """
@@ -68,6 +68,7 @@ class Canvas(QLabel):
         pen.setColor(QColor('blue') if node.highlit else QColor('black'))
         pen.setWidth(2)
         painter.setPen(pen)
+
         painter.drawEllipse(*node.pos, node.radius, node.radius)
 
     # ------------------------------------
@@ -91,6 +92,22 @@ class Canvas(QLabel):
         #     self.drawEdge(painter, edge)
 
         painter.end()
+
+
+    def getAt(self, pos, y=None):
+
+        if y is not None: pos = vec(pos, y)
+        if type(pos) is not Vector:
+            raise TypeError(f"Expected int or Vector, not {type(pos)}")
+
+        for node in self.graph.nodes:
+
+            if  (pos > node.pos - node.radius).all() and\
+                (pos < node.pos + node.radius).all():
+
+                return node
+
+        return None
 
     # ------------------------------------
 

@@ -10,22 +10,53 @@ from PyQt5.QtGui import QPalette, QColor, QFont, QIcon
 from gui import Canvas, EventHandler
 
 # Data
-from vector import vec
+from vector import vec, Vector
+from data import Node, Edge
+
+# ------------------------------------------------------------------------------
+"""
+Globals
+"""
+
+MOUSE_DIFF = 30
+DATA_INDEX = 3
 
 # ------------------------------------------------------------------------------
 """
 Program Classes
 """
 
-# class Move(EventHandler):
+class Move(EventHandler):
 
-#     def getName(self):
-#         return "Move"
+    selection = None
 
-#     # ------------------------------------
+    @staticmethod
+    def getName(): return "Move"
 
-#     def mousePressEvent(self, e):
-#         pass
+    @staticmethod
+    def getIcon(): return QIcon.fromTheme("edit-redo")
+
+    @staticmethod
+    def mousePressEvent(ctx, e):
+        Move.selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
+
+        if Move.selection:
+            Node.unhighlight()
+            Move.selection.setHighlight(True)
+
+
+    @staticmethod
+    def mouseReleaseEvent(ctx, e):
+        Move.selection = None
+        Node.unhighlight()
+
+
+    @staticmethod
+    def mouseMoveEvent(ctx, e):
+        if Move.selection:
+            Move.selection.pos = ctx.transformCoords(e.x(), e.y())
+
+# ------------------------------------
 
 class AddNode(EventHandler):
 
@@ -40,12 +71,10 @@ class AddNode(EventHandler):
         ctx.canvas.addNode(*ctx.transformCoords(e.x(), e.y()))
 
     @staticmethod
-    def mouseReleaseEvent(ctx, e):
-        return super.mouseReleaseEvent(ctx, e)
+    def mouseReleaseEvent(ctx, e): pass
 
     @staticmethod
-    def mouseMoveEvent(ctx, e):
-        return super.mouseMoveEvent(ctx, e)
+    def mouseMoveEvent(ctx, e): pass
 
 # -----------------------------------------------------------------------------
 
@@ -69,10 +98,12 @@ class MainWindow(QMainWindow):
         self.listbox = QListWidget()
 
         for i, _class in enumerate(EventHandler.__subclasses__()):
+
             w = QListWidgetItem()
             w.setData(0, _class.getName())
-            w.setData(3, _class)
+            w.setData(DATA_INDEX, _class)
             w.setIcon(_class.getIcon())
+
             self.listbox.insertItem(i, w)
 
         main_layout.addWidget(self.listbox)
@@ -86,25 +117,47 @@ class MainWindow(QMainWindow):
     # ------------------------------------
 
     def getSelection(self):
-        return self.listbox.currentItem()
+        return self.listbox.currentItem().data(DATA_INDEX)
 
     # ------------------------------------
 
     def mousePressEvent(self, e):
         
-        handler = self.getSelection().data(3)
+        handler = self.getSelection()
         handler.mousePressEvent(self, e)
+
+        self.canvas.redraw()
+        self.update()
+
+
+    def mouseReleaseEvent(self, e):
+
+        handler = self.getSelection()
+        handler.mouseReleaseEvent(self, e)
+
+        self.canvas.redraw()
+        self.update()
+
+
+    def mouseMoveEvent(self, e):
+
+        handler = self.getSelection()
+        handler.mouseMoveEvent(self, e)
 
         self.canvas.redraw()
         self.update()
 
     # ------------------------------------
 
-    def transformCoords(self, x, y):
+    def transformCoords(self, x, y) -> Vector:
 
-        return (
-            x - self.listbox.geometry().width(), y
-        )
+        rec = self.canvas.geometry()
+        r = vec(0, 0) + Node.radius 
+
+        return vec(
+            x - self.listbox.geometry().width() - MOUSE_DIFF, y - MOUSE_DIFF
+        ).clip(r/2, vec(rec.width(), rec.height()) - r)
+
 
 # ------------------------------------------------------------------------------
 """
