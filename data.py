@@ -23,7 +23,7 @@ DOM = xml.getDOMImplementation()
 Invisible classes
 """
 
-# Classes that inherit from XMLable should be able to create 
+# Classes that inherit from XMLable should be able to create XML elements
 class XMLable(abc.ABC):
 
     @abc.abstractmethod
@@ -208,7 +208,6 @@ class Graph:
     def addEdge(self, node0: Node, node1: Node):
         self.edges.append(node0.addEdge(node1))
         return self.edges[-1]
-
 
     # ------------------------------------
 
