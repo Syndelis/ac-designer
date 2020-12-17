@@ -196,17 +196,18 @@ class Graph:
 
     # ------------------------------------
 
-    def addNode(self, node: Node=None, x=-1, y=-1):
+    def addNode(self, node: Node=None, x=-1, y=-1, newid=True):
 
         if node is None: node = Node(x, y)
 
-        node.id = int(time() - self.creation_time)
+        if newid: node.id = int(time() - self.creation_time)
         self.nodes.append(node)
 
     # ------------------------------------
 
     def addEdge(self, node0: Node, node1: Node):
         self.edges.append(node0.addEdge(node1))
+        return self.edges[-1]
 
 
     # ------------------------------------
@@ -222,7 +223,6 @@ class Graph:
 
     # ------------------------------------
 
-    # TODO
     def saveXML(self, filename="test.xml"):
         
         doc = DOM.createDocument(None, "AC", None)
@@ -241,3 +241,59 @@ class Graph:
 
         with open(filename, "w") as f:
             doc.writexml(f, addindent='\t', newl='\n')
+
+    # ------------------------------------
+
+    @classmethod
+    def loadXML(cls, filename="test.xml"):
+
+        g = cls()
+        doc = xml.parse(filename)
+
+        for node in doc.documentElement.getElementsByTagName("node"):
+
+            attr = node.attributes
+            n = Node(
+                float(attr['x'].value),
+                float(attr['y'].value),
+                attr['name'].value
+            )
+
+            n.id = int(attr['id'].value)
+
+            g.addNode(n, newid=False)
+
+        
+        for edge in doc.documentElement.getElementsByTagName("edge"):
+
+            attr = edge.attributes
+            nodes = (
+                find(g.nodes, lambda i: i.id == int(attr['src'].value)),
+                find(g.nodes, lambda i: i.id == int(attr['dst'].value))
+            )
+
+            e = g.addEdge(*nodes)
+            
+            for condition in edge.getElementsByTagName("condition"):
+                
+                attr = condition.attributes
+                e.addCondition(
+                    attr['target'].value,
+                    Op(attr['op'].value),
+                    attr['amnt'].value
+                )
+
+        return g
+
+
+# ------------------------------------------------------------------------------
+"""
+Auxiliary functions
+"""
+
+def find(iter, cond):
+
+    for i in iter:
+        if cond(i): return i
+
+    return None
