@@ -425,12 +425,15 @@ class EditEdgeWindow(QWidget):
 
     def okBtn(self):
 
-        # for cond in self.conditionOps:
+        for cond in self.conditionOps:
 
-        #     self.target.addCondition()
+            self.target.addCondition(cond.state, cond.op, cond.amnt)
 
-        # self.target.register()
-        # self.ctx.canvas.graph.addEdge(self.target)
+        self.target.register()
+        self.ctx.canvas.graph.addEdge(self.target)
+
+        self.ctx.canvas.redraw()
+        self.ctx.update()
 
         self.close()
 

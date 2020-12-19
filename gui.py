@@ -73,9 +73,28 @@ class Canvas(QLabel):
 
     # ------------------------------------
 
-    # TODO
-    # Draggable edge
-    #def addEdge
+    def drawEdge(self, painter, edge: Edge):
+
+        pen = QPen()
+        pen.setColor(QColor('black'))
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        nodes = edge.nodes
+
+        x0, y0 = nodes[0].pos.astype(int)
+        x1, y1 = nodes[1].pos.astype(int)
+
+        r0 = nodes[0].radius//2
+        r1 = nodes[1].radius//2
+
+        angle = atan2(y0 - y1, x0 - x1)
+        x0 -= round(cos(angle) * r0)
+        y0 -= round(sin(angle) * r0)
+        x1 += round(cos(angle) * r1)
+        y1 += round(sin(angle) * r1)
+
+        painter.drawLine(x0 + r0, y0 + r0, x1 + r1, y1 + r1)
 
     # ------------------------------------
 
@@ -87,9 +106,8 @@ class Canvas(QLabel):
         for node in self.graph.nodes:
             self.drawNode(painter, node)
 
-        # TODO: Add the drawEdge method
-        # for edge in graph.edges:
-        #     self.drawEdge(painter, edge)
+        for edge in self.graph.edges:
+            self.drawEdge(painter, edge)
 
         painter.end()
 
