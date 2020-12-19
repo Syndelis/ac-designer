@@ -153,14 +153,13 @@ class Edge(Base, XMLable):
 
     lit = []
 
-    def __init__(self, node0: Node, node1: Node, highlit=True):
+    def __init__(self, node0: Node, node1: Node, highlit=True, register=True):
 
         self.nodes = node0, node1
-        node0.outgoing.append(self)
-        node1.incoming.append(self)
+
+        if register: self.register()
 
         self.name = ''
-
         self.conditions: list[Condition] = []
 
         type(self).unhighlight()
@@ -168,8 +167,20 @@ class Edge(Base, XMLable):
 
     # ------------------------------------
 
-    def addCondition(self, *args, **kwargs):
-        self.conditions.append(Condition(*args, **kwargs))
+    def addCondition(self, *args, condition: Condition=None, **kwargs):
+
+        if condition is None:
+            self.conditions.append(Condition(*args, **kwargs))
+
+        elif type(condition) is Condition: self.conditions.append(condition)
+
+        else: raise TypeError()
+
+    # ------------------------------------
+
+    def register(self):
+        self.nodes[0].outgoing.append(self)
+        self.nodes[1].incoming.append(self)
 
     # ------------------------------------
 
@@ -208,8 +219,16 @@ class Graph:
 
     # ------------------------------------
 
-    def addEdge(self, node0: Node, node1: Node):
-        self.edges.append(node0.addEdge(node1))
+    def addEdge(self, node0, node1: Node=None):
+
+        if type(node0) is Node and type(node1) is Node:
+            self.edges.append(node0.addEdge(node1))
+
+        elif type(node0) is Edge:
+            self.edges.append(node0)
+
+        else: raise TypeError()
+
         return self.edges[-1]
 
     # ------------------------------------

@@ -111,6 +111,16 @@ class Canvas(QLabel):
 
     # ------------------------------------
 
+    def unhighlight(self):
+
+        for node in self.graph.nodes:
+            node.setHighlight(False)
+
+        for edge in self.graph.edges:
+            edge.setHighlight(False)
+
+    # ------------------------------------
+
     def __getattr__(self, attr):
         # For graph operations, deal directly with the graph
 
@@ -120,17 +130,17 @@ class Canvas(QLabel):
 
 class EventHandler(abc.ABC):
 
-    @abc.abstractstaticmethod
-    def getName(): pass
+    @abc.abstractclassmethod
+    def getName(cls): pass
 
-    @abc.abstractstaticmethod
-    def getIcon(): pass
+    @abc.abstractclassmethod
+    def getIcon(cls): pass
 
-    @abc.abstractstaticmethod
-    def mousePressEvent(ctx, e): pass
+    @abc.abstractclassmethod
+    def mousePressEvent(cls, ctx, e): pass
 
-    @abc.abstractstaticmethod
-    def mouseReleaseEvent(ctx, e): pass
+    @abc.abstractclassmethod
+    def mouseReleaseEvent(cls, ctx, e): pass
 
-    @abc.abstractstaticmethod
-    def mouseMoveEvent(ctx, e): pass
+    @abc.abstractclassmethod
+    def mouseMoveEvent(cls, ctx, e): pass
