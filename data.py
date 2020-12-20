@@ -48,9 +48,9 @@ Drawable classes
 
 class Condition(XMLable):
 
-    def __init__(self, target: int, op: Op, amnt: int):
+    def __init__(self, state: int, op: Op, amnt: int):
         
-        self.target = target # Node ID
+        self.state = state # Node ID
         self.op = op
         self.amnt = amnt
 
@@ -59,7 +59,7 @@ class Condition(XMLable):
     def toXML(self, doc: xml.Document) -> xml.Element:
 
         el = doc.createElement("condition")
-        el.setAttribute("target", f"{self.target}")
+        el.setAttribute("state", f"{self.state}")
         el.setAttribute("op", self.op.value)
         el.setAttribute("amnt", f"{self.amnt}")
 
@@ -152,6 +152,8 @@ class Node(Base, XMLable):
 class Edge(Base, XMLable):
 
     lit = []
+    arrow_width = 5
+    arrow_height = 8
 
     def __init__(self, node0: Node, node1: Node, highlit=True, register=True):
 
@@ -299,7 +301,7 @@ class Graph:
                 
                 attr = condition.attributes
                 e.addCondition(
-                    attr['target'].value,
+                    attr['state'].value,
                     Op(attr['op'].value),
                     attr['amnt'].value
                 )

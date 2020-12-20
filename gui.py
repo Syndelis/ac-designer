@@ -4,7 +4,7 @@ Imports
 
 # Gui
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QColor, QFont, QPainter, QPixmap, QPen, QBrush
 
 # Misc
@@ -73,7 +73,7 @@ class Canvas(QLabel):
 
     # ------------------------------------
 
-    def drawEdge(self, painter, edge: Edge):
+    def drawEdge(self, painter: QPainter, edge: Edge):
 
         pen = QPen()
         pen.setColor(QColor('black'))
@@ -95,6 +95,24 @@ class Canvas(QLabel):
         y1 += round(sin(angle) * r1)
 
         painter.drawLine(x0 + r0, y0 + r0, x1 + r1, y1 + r1)
+
+        painter.setBrush(Qt.white)
+
+        edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
+        x, y = edge.calculated
+
+        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
+        
+        painter.setBrush(Qt.black)
+
+        p = vec(x1, y1) + r1
+        dir = vec(cos(angle), sin(angle))
+
+        v = p + dir * Edge.arrow_height
+        left = v + vec(-sin(angle), cos(angle)) * Edge.arrow_width
+        right = v + vec(sin(angle), -cos(angle)) * Edge.arrow_width
+
+        painter.drawPolygon(QPoint(*p), QPoint(*left), QPoint(*right))
 
     # ------------------------------------
 
@@ -124,6 +142,15 @@ class Canvas(QLabel):
                 (pos < node.pos + node.radius).all():
 
                 return node
+
+
+        v = vec(2, 1) * Node.radius
+        for edge in self.graph.edges:
+
+            if (pos > edge.calculated - v).all() and\
+               (pos < edge.calculated + v).all():
+
+               return edge
 
         return None
 

@@ -44,7 +44,7 @@ class Move(EventHandler):
     def mousePressEvent(cls, ctx, e):
         cls.selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
 
-        if cls.selection:
+        if type(cls.selection) is Node:
             Node.unhighlight()
             cls.selection.setHighlight(True)
 
@@ -53,6 +53,7 @@ class Move(EventHandler):
     def mouseReleaseEvent(cls, ctx, e):
         cls.selection = None
         Node.unhighlight()
+        ctx.canvas.unhighlight()
 
 
     @classmethod
@@ -97,7 +98,7 @@ class AddEdge(EventHandler):
     def mousePressEvent(cls, ctx, e):
         selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
 
-        if selection:
+        if type(selection) is Node:
             ctx.canvas.unhighlight()
             selection.highlit = True
 
@@ -136,23 +137,25 @@ class AddEdge(EventHandler):
             cls.edge[1] = selection
 
             x0, y0 = cls.edge[0].pos.astype(int)
-            x1, y1 = (
-                selection.pos
-                if selection is not None
-                else mouse
-            ).astype(int)
-
             r0 = cls.edge[0].radius//2
-            r1 = selection.radius//2 if selection else r0
+
+            if type(selection) is Node:
+
+                x1, y1 = selection.pos.astype(int)
+                r1 = selection.radius // 2
+                selection.highlit = True
+
+            else:
+
+                x1, y1 = mouse.astype(int)
+                r1 = r0
+
 
             angle = atan2(y0 - y1, x0 - x1)
             x0 -= round(cos(angle) * r0)
             y0 -= round(sin(angle) * r0)
             x1 += round(cos(angle) * r1)
             y1 += round(sin(angle) * r1)
-
-            if selection:
-                selection.highlit = True
 
             painter.drawLine(x0 + r0, y0 + r0, x1 + r1, y1 + r1)
 
@@ -229,6 +232,11 @@ class MainWindow(QMainWindow):
         handler.mouseMoveEvent(self, e)
 
         self.update()
+
+
+    def mouseDoubleClickEvent(self, e):
+        
+        print('double click')
 
     # ------------------------------------
 
