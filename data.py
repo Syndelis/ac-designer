@@ -216,7 +216,9 @@ class Graph:
 
         if node is None: node = Node(x, y)
 
-        if newid: node.id = int(time() - self.creation_time)
+        if newid:
+            node.id = int((time() - self.creation_time) * 10)
+
         self.nodes.append(node)
 
     # ------------------------------------

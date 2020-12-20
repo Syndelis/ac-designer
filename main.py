@@ -166,6 +166,8 @@ class AddEdge(EventHandler):
 
 class MainWindow(QMainWindow):
 
+    edge_editor = None
+
     def __init__(self):
 
         super(type(self), self).__init__()
@@ -236,7 +238,10 @@ class MainWindow(QMainWindow):
 
     def mouseDoubleClickEvent(self, e):
         
-        print('double click')
+        at = self.canvas.getAt(self.transformCoords(e.x(), e.y()))
+        if type(at) is Edge:
+            self.edge_editor = EditEdgeWindow(at, self)
+            self.edge_editor.show()
 
     # ------------------------------------
 
@@ -254,18 +259,12 @@ class MainWindow(QMainWindow):
 
 class ConditionOp(QWidget):
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, state: int=None, op: str=None, amnt: int=None):
 
         super(type(self), self).__init__()
+        self.ctx = ctx
 
         lay = QHBoxLayout()
-
-        # TODO: ComboBoxes
-        #   In order to add items, .addItem(TEXT, DATA)
-        #   TEXT being the string the user will see, while DATA is
-        #   our own Node objects
-        #
-        #   In order to retrieve it, .currentData()
 
         # ------------------------------------
         # State
@@ -277,7 +276,16 @@ class ConditionOp(QWidget):
         self._state = QComboBox()
 
         for node in ctx.canvas.graph.nodes:
-            self._state.addItem(node.name, node.id)
+            self._state.addItem(node.name, userData=node.id)
+
+
+        if state is not None:
+
+            for ind, node in enumerate(ctx.canvas.graph.nodes):
+                if node.id == state: break
+
+            self._state.setCurrentIndex(ind)
+
 
         l.addWidget(self._state)
 
@@ -293,8 +301,15 @@ class ConditionOp(QWidget):
         l.addWidget(QLabel("Operator"))
         self._op = QComboBox()
 
-        for op in Op.__members__:
-            self._op.addItem(Op[op].value)
+        for i in Op.__members__:
+            self._op.addItem(Op[i].value)
+
+
+        if op is not None:
+
+            self._op.setCurrentIndex(
+                list(Op.__members__.values()).index(Op(op))
+            )
 
         l.addWidget(self._op)
 
@@ -309,6 +324,10 @@ class ConditionOp(QWidget):
 
         l.addWidget(QLabel("Amount"))
         self._amnt = QSpinBox()
+
+        if amnt is not None:
+            self._amnt.setValue(amnt)
+
         l.addWidget(self._amnt)
 
         w.setLayout(l)
@@ -381,7 +400,10 @@ class EditEdgeWindow(QWidget):
         self.conditionOps = []
 
         for condition in self.target.conditions:
-            self.plusBtn(False)
+            self.plusBtn(
+                False, state=condition.state,
+                op=condition.op, amnt=condition.amnt
+            )
 
         self.condition_wid.setLayout(self.condition_lay)
         main_layout.addWidget(self.condition_wid)
@@ -422,9 +444,9 @@ class EditEdgeWindow(QWidget):
 
     # ------------------------------------
 
-    def plusBtn(self, update=True):
+    def plusBtn(self, update=True,state: int=None,op: str=None,amnt: int=None):
 
-        w = ConditionOp(self.ctx)
+        w = ConditionOp(self.ctx, state, op, amnt)
         self.condition_lay.addWidget(w)
         self.conditionOps.append(w)
 
@@ -435,7 +457,11 @@ class EditEdgeWindow(QWidget):
 
         for cond in self.conditionOps:
 
-            self.target.addCondition(cond.state, cond.op, cond.amnt)
+            self.target.addCondition(
+                cond.state, cond.op,
+                cond.amnt
+            )
+
 
         self.target.register()
         self.ctx.canvas.graph.addEdge(self.target)
@@ -448,6 +474,7 @@ class EditEdgeWindow(QWidget):
 
     def cancelBtn(self):
 
+        # TODO: What happens when deleting a registered edge?
         del self.target
         self.close()
 
