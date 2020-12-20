@@ -9,6 +9,7 @@ from PyQt5.QtGui import QPalette, QColor, QFont, QPainter, QPixmap, QPen, QBrush
 
 # Misc
 from math import sin, cos, atan2
+from numpy import matrix
 import abc
 
 # Data
@@ -80,6 +81,9 @@ class Canvas(QLabel):
         pen.setWidth(2)
         painter.setPen(pen)
 
+        # ------------------------------------
+        # Drawing the line
+
         nodes = edge.nodes
 
         x0, y0 = nodes[0].pos.astype(int)
@@ -96,12 +100,8 @@ class Canvas(QLabel):
 
         painter.drawLine(x0 + r0, y0 + r0, x1 + r1, y1 + r1)
 
-        painter.setBrush(Qt.white)
-
-        edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
-        x, y = edge.calculated
-
-        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
+        # ------------------------------------
+        # Drawing arrow point
         
         painter.setBrush(Qt.black)
 
@@ -109,10 +109,22 @@ class Canvas(QLabel):
         dir = vec(cos(angle), sin(angle))
 
         v = p + dir * Edge.arrow_height
-        left = v + vec(-sin(angle), cos(angle)) * Edge.arrow_width
-        right = v + vec(sin(angle), -cos(angle)) * Edge.arrow_width
+        u = vec(dir @ matrix(((0, 1), (-1, 0))))[0][0] # Don't ask about these
+
+        left = v + u * Edge.arrow_width
+        right = v - u * Edge.arrow_width
 
         painter.drawPolygon(QPoint(*p), QPoint(*left), QPoint(*right))
+
+        # ------------------------------------
+        # Drawing the name holder
+
+        painter.setBrush(Qt.white)
+
+        edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
+        x, y = edge.calculated
+
+        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
 
     # ------------------------------------
 
