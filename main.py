@@ -11,7 +11,7 @@ from gui import Canvas, EventHandler
 
 # Data
 from vector import vec, Vector
-from data import Node, Edge, Op
+from data import Graph, Node, Edge, Op
 
 # Math
 from numpy import arctan
@@ -278,8 +278,22 @@ class MainWindow(QMainWindow):
         ).clip(r/2, vec(rec.width(), rec.height()) - r)
 
 
-    def saveXML(self): pass
-    def loadXML(self): pass
+    def saveXML(self):
+
+        filename = QFileDialog.getSaveFileName(
+            self, "Save Model", ".", "Graph (*.xml)")
+        
+        self.canvas.graph.saveXML(filename[0])
+
+
+    def loadXML(self):
+
+        filename = QFileDialog.getOpenFileName(
+            self, "Load Model", ".", "Graph (*.xml)")
+
+        self.canvas.graph = Graph.loadXML(filename[0])
+        self.canvas.redraw()
+        self.update()
 
 
 # ------------------------------------------------------------------------------
@@ -553,7 +567,7 @@ class EditEdgeWindow(QWidget):
         for cond in self.conditionOps:
 
             self.target.addCondition(
-                cond.state, cond.op,
+                cond.state, Op(cond.op),
                 cond.amnt
             )
 

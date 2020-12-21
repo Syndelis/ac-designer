@@ -288,6 +288,7 @@ class Graph:
             )
 
             n.id = int(attr['id'].value)
+            g.next_id = max(n.id + 1, g.next_id)
 
             g.addNode(n, newid=False)
 
@@ -301,14 +302,15 @@ class Graph:
             )
 
             e = g.addEdge(*nodes)
+            e.name = attr['name'].value
             
             for condition in edge.getElementsByTagName("condition"):
                 
                 attr = condition.attributes
                 e.addCondition(
-                    attr['state'].value,
+                    int(attr['state'].value),
                     Op(attr['op'].value),
-                    attr['amnt'].value
+                    int(attr['amnt'].value)
                 )
 
         return g
