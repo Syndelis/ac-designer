@@ -208,16 +208,19 @@ class Graph:
     def __init__(self):
         self.nodes = []
         self.edges = []
+        self.next_id = 0
         self.creation_time = time()
 
     # ------------------------------------
 
     def addNode(self, node: Node=None, x=-1, y=-1, newid=True):
 
-        if node is None: node = Node(x, y)
+        if node is None:
+            node = Node(x, y, name=f'Node {self.next_id}')
 
         if newid:
-            node.id = int((time() - self.creation_time) * 10)
+            node.id = self.next_id
+            self.next_id += 1
 
         self.nodes.append(node)
 

@@ -73,7 +73,11 @@ class AddNode(EventHandler):
 
     @classmethod
     def mousePressEvent(cls, ctx, e):
-        ctx.canvas.addNode(*ctx.transformCoords(e.x(), e.y()))
+
+        selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
+
+        if selection is None:
+            ctx.canvas.addNode(*ctx.transformCoords(e.x(), e.y()))
 
     @classmethod
     def mouseReleaseEvent(cls, ctx, e): pass
@@ -166,6 +170,7 @@ class AddEdge(EventHandler):
 
 class MainWindow(QMainWindow):
 
+    node_editor = None
     edge_editor = None
 
     def __init__(self):
@@ -174,6 +179,18 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("AC Designer")
         self.setMouseTracking(True)
+
+        save_act = QAction('Save', self)
+        save_act.triggered.connect(self.saveXML)
+
+        load_act = QAction('Load', self)
+        load_act.triggered.connect(self.loadXML)
+
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('File')
+        file_menu.addAction(save_act)
+        file_menu.addAction(load_act)
+
         self.initWidgets()
 
     # ------------------------------------
@@ -239,9 +256,15 @@ class MainWindow(QMainWindow):
     def mouseDoubleClickEvent(self, e):
         
         at = self.canvas.getAt(self.transformCoords(e.x(), e.y()))
+
         if type(at) is Edge:
             self.edge_editor = EditEdgeWindow(at, self)
             self.edge_editor.show()
+
+        
+        elif type(at) is Node:
+            self.node_editor = EditNodeWindow(at, self)
+            self.node_editor.show()
 
     # ------------------------------------
 
@@ -254,6 +277,75 @@ class MainWindow(QMainWindow):
             x - self.listbox.geometry().width() - MOUSE_DIFF, y - MOUSE_DIFF
         ).clip(r/2, vec(rec.width(), rec.height()) - r)
 
+
+    def saveXML(self): pass
+    def loadXML(self): pass
+
+
+# ------------------------------------------------------------------------------
+
+class EditNodeWindow(QWidget):
+
+    def __init__(self, target: Node, ctx):
+
+        super(type(self), self).__init__()
+        self.target = target
+        self.ctx = ctx
+        self.initWidgets()
+
+
+    def initWidgets(self):
+        
+        main_layout = QVBoxLayout()
+
+        # ----------------------------------------
+        # Name
+
+        lay = QHBoxLayout()
+        wid = QWidget()
+
+        lay.addWidget(QLabel("Name"))
+
+        self.namebox = QLineEdit()
+        self.namebox.setText(self.target.name)
+        self.namebox.returnPressed.connect(self.okBtn)
+
+        lay.addWidget(self.namebox)
+
+        wid.setLayout(lay)
+        main_layout.addWidget(wid)
+
+        # ----------------------------------------
+        # Buttons
+        lay = QHBoxLayout()
+        wid = QWidget()
+
+        ok = QPushButton('Ok')
+        ok.clicked.connect(self.okBtn)
+
+        cancel = QPushButton('Cancel')
+        cancel.clicked.connect(self.cancelBtn)
+
+        lay.addWidget(ok)
+        lay.addWidget(cancel)
+        
+        wid.setLayout(lay)
+        main_layout.addWidget(wid)
+
+        self.setLayout(main_layout)
+
+
+    def okBtn(self):
+
+        self.target.name = self.namebox.text()
+
+        self.ctx.canvas.redraw()
+        self.ctx.update()
+
+        self.close()
+
+    def cancelBtn(self):
+        self.close()
 
 # ------------------------------------------------------------------------------
 
@@ -378,6 +470,7 @@ class EditEdgeWindow(QWidget):
         namelabel = QLabel("Name:")
         self.namebox = QLineEdit()
         self.namebox.setText(self.target.name)
+        self.namebox.returnPressed.connect(self.okBtn)
 
         lay.addWidget(namelabel)
         lay.addWidget(self.namebox)
@@ -455,6 +548,8 @@ class EditEdgeWindow(QWidget):
 
     def okBtn(self):
 
+        self.target.name = self.namebox.text()
+
         for cond in self.conditionOps:
 
             self.target.addCondition(
@@ -476,6 +571,8 @@ class EditEdgeWindow(QWidget):
 
         # TODO: What happens when deleting a registered edge?
         del self.target
+        # Needs an 'unregister' command in order to actually remove it
+        # Better done in a menu context rather than on the editor itself
         self.close()
 
 

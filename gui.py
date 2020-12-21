@@ -72,6 +72,8 @@ class Canvas(QLabel):
 
         painter.drawEllipse(*node.pos, node.radius, node.radius)
 
+        painter.drawText(*node.pos, node.name)
+
     # ------------------------------------
 
     def drawEdge(self, painter: QPainter, edge: Edge):
@@ -125,6 +127,8 @@ class Canvas(QLabel):
         x, y = edge.calculated
 
         painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
+
+        painter.drawText(x, y, edge.name)
 
     # ------------------------------------
 
