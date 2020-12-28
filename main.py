@@ -440,9 +440,30 @@ class ConditionOp(QWidget):
         lay.addWidget(w)
 
         # ------------------------------------
+        # Remove button
+
+        l = QVBoxLayout()
+        w = QWidget()
+
+        l.addWidget(QLabel(''))
+
+        remove = QPushButton()
+        remove.setIcon(QIcon.fromTheme("list-remove"))
+        remove.clicked.connect(self.removeBtn)
+
+        l.addWidget(remove)
+        w.setLayout(l)
+
+        lay.addWidget(w)
+
+        # ------------------------------------
 
         self.setLayout(lay)
 
+    # ------------------------------------
+
+    def removeBtn(self):
+        print('Remove btn')
 
     # ------------------------------------
 
