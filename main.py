@@ -283,7 +283,8 @@ class MainWindow(QMainWindow):
         filename = QFileDialog.getSaveFileName(
             self, "Save Model", ".", "Graph (*.xml)")
         
-        self.canvas.graph.saveXML(filename[0])
+        if filename:
+            self.canvas.graph.saveXML(filename[0])
 
 
     def loadXML(self):
@@ -291,9 +292,10 @@ class MainWindow(QMainWindow):
         filename = QFileDialog.getOpenFileName(
             self, "Load Model", ".", "Graph (*.xml)")
 
-        self.canvas.graph = Graph.loadXML(filename[0])
-        self.canvas.redraw()
-        self.update()
+        if filename:
+            self.canvas.graph = Graph.loadXML(filename[0])
+            self.canvas.redraw()
+            self.update()
 
 
 # ------------------------------------------------------------------------------
@@ -358,6 +360,7 @@ class EditNodeWindow(QWidget):
 
         self.close()
 
+
     def cancelBtn(self):
         self.close()
 
@@ -375,10 +378,6 @@ class ConditionOp(QWidget):
         # ------------------------------------
         # State
 
-        l = QVBoxLayout()
-        w = QWidget()
-
-        l.addWidget(QLabel("Target State"))
         self._state = QComboBox()
 
         for node in ctx.canvas.graph.nodes:
@@ -393,18 +392,11 @@ class ConditionOp(QWidget):
             self._state.setCurrentIndex(ind)
 
 
-        l.addWidget(self._state)
-
-        w.setLayout(l)
-        lay.addWidget(w)
+        lay.addWidget(self._state)
 
         # ------------------------------------
         # Operator
 
-        l = QVBoxLayout()
-        w = QWidget()
-
-        l.addWidget(QLabel("Operator"))
         self._op = QComboBox()
 
         for i in Op.__members__:
@@ -417,53 +409,30 @@ class ConditionOp(QWidget):
                 list(Op.__members__.values()).index(Op(op))
             )
 
-        l.addWidget(self._op)
-
-        w.setLayout(l)
-        lay.addWidget(w)
+        lay.addWidget(self._op)
 
         # ------------------------------------
         # Amount
 
-        l = QVBoxLayout()
-        w = QWidget()
-
-        l.addWidget(QLabel("Amount"))
         self._amnt = QSpinBox()
 
         if amnt is not None:
             self._amnt.setValue(amnt)
 
-        l.addWidget(self._amnt)
-
-        w.setLayout(l)
-        lay.addWidget(w)
+        lay.addWidget(self._amnt)
 
         # ------------------------------------
         # Remove button
 
-        l = QVBoxLayout()
-        w = QWidget()
+        # remove = QPushButton()
+        # remove.setIcon(QIcon.fromTheme("list-remove"))
+        # remove.clicked.connect(self.removeBtn)
 
-        l.addWidget(QLabel(''))
-
-        remove = QPushButton()
-        remove.setIcon(QIcon.fromTheme("list-remove"))
-        remove.clicked.connect(self.removeBtn)
-
-        l.addWidget(remove)
-        w.setLayout(l)
-
-        lay.addWidget(w)
+        # lay.addWidget(remove)
 
         # ------------------------------------
 
         self.setLayout(lay)
-
-    # ------------------------------------
-
-    def removeBtn(self):
-        print('Remove btn')
 
     # ------------------------------------
 
@@ -489,6 +458,8 @@ class EditEdgeWindow(QWidget):
         super(type(self), self).__init__()
         self.target = target
         self.ctx = ctx
+
+        self.target_conditions = self.target.conditions.copy()
         self.initWidgets()
 
 
@@ -525,13 +496,7 @@ class EditEdgeWindow(QWidget):
         self.condition_lay = QVBoxLayout()
         self.condition_wid = QWidget()
 
-        self.conditionOps = []
-
-        for condition in self.target.conditions:
-            self.plusBtn(
-                False, state=condition.state,
-                op=condition.op, amnt=condition.amnt
-            )
+        self.populateConditions()
 
         self.condition_wid.setLayout(self.condition_lay)
         main_layout.addWidget(self.condition_wid)
@@ -570,13 +535,47 @@ class EditEdgeWindow(QWidget):
 
         self.setLayout(main_layout)
 
+
+    def populateConditions(self):
+
+        l = QHBoxLayout()
+        w = QWidget()
+
+        l.addWidget(QLabel("Target State"))
+        l.addWidget(QLabel("Operator"))
+        l.addWidget(QLabel("Amount"))
+        l.addWidget(QLabel(""))
+
+        w.setLayout(l)
+        self.condition_lay.addWidget(w)
+
+        self.conditionOps = []
+
+        for condition in self.target_conditions:
+            self.plusBtn(
+                False, state=condition.state,
+                op=condition.op, amnt=condition.amnt
+            )
+
     # ------------------------------------
 
     def plusBtn(self, update=True,state: int=None,op: str=None,amnt: int=None):
 
-        w = ConditionOp(self.ctx, state, op, amnt)
+        l = QHBoxLayout()
+        w = QWidget()
+
+        cond = ConditionOp(self.ctx, state, op, amnt)
+        l.addWidget(cond)
+
+        remove = QPushButton()
+        remove.setIcon(QIcon.fromTheme('list-remove'))
+        remove.clicked.connect(self.removeBtn(len(self.conditionOps)))
+        
+        l.addWidget(remove)
+        w.setLayout(l)
+
         self.condition_lay.addWidget(w)
-        self.conditionOps.append(w)
+        self.conditionOps.append(cond)
 
         if update: self.update()
 
@@ -584,6 +583,7 @@ class EditEdgeWindow(QWidget):
     def okBtn(self):
 
         self.target.name = self.namebox.text()
+        self.target.conditions.clear()
 
         for cond in self.conditionOps:
 
@@ -594,7 +594,9 @@ class EditEdgeWindow(QWidget):
 
 
         self.target.register()
-        self.ctx.canvas.graph.addEdge(self.target)
+
+        if not self.target in self.ctx.canvas.graph.edges:
+            self.ctx.canvas.graph.addEdge(self.target)
 
         self.ctx.canvas.redraw()
         self.ctx.update()
@@ -609,6 +611,21 @@ class EditEdgeWindow(QWidget):
         # Needs an 'unregister' command in order to actually remove it
         # Better done in a menu context rather than on the editor itself
         self.close()
+
+
+    def removeBtn(self, ind: int):
+
+        def removeInd():
+
+            for i in reversed(range(self.condition_lay.count())): 
+                self.condition_lay.itemAt(i).widget().setParent(None)
+
+            self.target_conditions.pop(ind)
+
+            self.populateConditions()
+            self.update()
+
+        return removeInd
 
 
 # ------------------------------------------------------------------------------
