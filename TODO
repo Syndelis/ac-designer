@@ -1,4 +1,5 @@
-- Solve removing conditions (cache them in a temporary list)
+- "Remove" Right-Click Menu
+- Add custom icons for the list
 - Adjust text positions of Nodes and Edges
 - Add Edge anchor point
 - Generate code
