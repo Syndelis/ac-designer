@@ -11,7 +11,7 @@ from gui import Canvas, EventHandler
 
 # Data
 from vector import vec, Vector
-from data import Graph, Node, Edge, Op
+from data import Graph, Node, Edge, Op, Condition
 
 # Math
 from numpy import arctan
@@ -491,6 +491,22 @@ class EditEdgeWindow(QWidget):
         main_layout.addWidget(wid)
 
         # ------------------------------------
+        # Probability
+
+        lay = QHBoxLayout()
+        wid = QWidget()
+
+        problabel = QLabel("Probability (%):")
+        self.probbox = QSpinBox(self)
+        self.probbox.setMaximum(100)
+        self.probbox.setValue(self.target.probability)
+
+        lay.addWidget(problabel)
+        lay.addWidget(self.probbox)
+        wid.setLayout(lay)
+        main_layout.addWidget(wid)
+
+        # ------------------------------------
         # Conditions
 
         line = QFrame()
@@ -561,12 +577,13 @@ class EditEdgeWindow(QWidget):
         for condition in self.target_conditions:
             self.plusBtn(
                 False, state=condition.state,
-                op=condition.op, amnt=condition.amnt
+                op=condition.op, amnt=condition.amnt, newcond=False
             )
 
     # ------------------------------------
 
-    def plusBtn(self, update=True,state: int=None,op: str=None,amnt: int=None):
+    def plusBtn(self, update=True, state: int=None,
+                op: str=None,amnt: int=None, newcond: bool=True):
 
         l = QHBoxLayout()
         w = QWidget()
@@ -584,12 +601,17 @@ class EditEdgeWindow(QWidget):
         self.condition_lay.addWidget(w)
         self.conditionOps.append(cond)
 
+        # This is to prevent recreating the same conditions when one is deleted
+        if newcond:
+            self.target_conditions.append(Condition(state, op, amnt))
+
         if update: self.update()
 
 
     def okBtn(self):
 
         self.target.name = self.namebox.text()
+        self.target.probability = self.probbox.value()
         self.target.conditions.clear()
 
         for cond in self.conditionOps:
@@ -598,7 +620,6 @@ class EditEdgeWindow(QWidget):
                 cond.state, Op(cond.op),
                 cond.amnt
             )
-
 
         self.target.register()
 
@@ -624,11 +645,17 @@ class EditEdgeWindow(QWidget):
 
         def removeInd():
 
-            for i in reversed(range(self.condition_lay.count())): 
-                self.condition_lay.itemAt(i).widget().setParent(None)
+            # if len(self.target_conditions) > ind:
+            self.target_conditions.pop(ind)
+            self.conditionOps.pop(ind)
 
-            if len(self.target_conditions) > ind:
-                self.target_conditions.pop(ind)
+            for tar, op in zip(self.target_conditions, self.conditionOps):
+                tar.state = op.state
+                tar.op = op.op
+                tar.amnt = op.amnt
+
+            for i in reversed(range(self.condition_lay.count())):
+                self.condition_lay.itemAt(i).widget().setParent(None)
 
             self.populateConditions()
             self.update()

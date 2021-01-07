@@ -164,6 +164,7 @@ class Edge(Base, XMLable):
 
         self.name = ''
         self.conditions: list[Condition] = []
+        self.probability = 100
 
         type(self).unhighlight()
         self.setHighlight(highlit)
@@ -198,6 +199,7 @@ class Edge(Base, XMLable):
         el.setAttribute("name", f"{self.name}")
         el.setAttribute("src", f"{self.nodes[0].id}")
         el.setAttribute("dst", f"{self.nodes[1].id}")
+        el.setAttribute("probability", f"{self.probability}")
 
         conds = doc.createElement("conditions")
         for condition in self.conditions:
@@ -331,6 +333,7 @@ class Graph:
 
             e = g.addEdge(*nodes)
             e.name = attr['name'].value
+            e.probability = int(attr['probability'].value)
             
             for condition in edge.getElementsByTagName("condition"):
                 
@@ -341,6 +344,7 @@ class Graph:
                     int(attr['amnt'].value)
                 )
 
+        Node.unhighlight()
         return g
 
 
