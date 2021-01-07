@@ -53,7 +53,6 @@ class Move(EventHandler):
     def mouseReleaseEvent(cls, ctx, e):
         cls.selection = None
         Node.unhighlight()
-        ctx.canvas.unhighlight()
 
 
     @classmethod
@@ -227,24 +226,30 @@ class MainWindow(QMainWindow):
     # ------------------------------------
 
     def mousePressEvent(self, e):
-        
-        self.canvas.redraw()
+
+        if e.button() > 1: return
+
         handler = self.getSelection()
         handler.mousePressEvent(self, e)
+        self.canvas.redraw()
 
         self.update()
 
 
     def mouseReleaseEvent(self, e):
 
-        self.canvas.redraw()
+        if e.button() > 1: return
+
         handler = self.getSelection()
         handler.mouseReleaseEvent(self, e)
+        self.canvas.redraw()
 
         self.update()
 
 
     def mouseMoveEvent(self, e):
+
+        if e.button() > 1: return
 
         self.canvas.redraw()
         handler = self.getSelection()
@@ -254,6 +259,8 @@ class MainWindow(QMainWindow):
 
 
     def mouseDoubleClickEvent(self, e):
+
+        if e.button() > 1: return
         
         at = self.canvas.getAt(self.transformCoords(e.x(), e.y()))
 
@@ -620,7 +627,8 @@ class EditEdgeWindow(QWidget):
             for i in reversed(range(self.condition_lay.count())): 
                 self.condition_lay.itemAt(i).widget().setParent(None)
 
-            self.target_conditions.pop(ind)
+            if len(self.target_conditions) > ind:
+                self.target_conditions.pop(ind)
 
             self.populateConditions()
             self.update()

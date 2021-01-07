@@ -5,6 +5,7 @@ Imports
 # Data
 from vector import vec
 from enum import Enum
+from typing import Union
 import abc
 import xml.dom.minidom as xml
 
@@ -184,6 +185,11 @@ class Edge(Base, XMLable):
         self.nodes[0].outgoing.append(self)
         self.nodes[1].incoming.append(self)
 
+
+    def unregister(self):
+        self.nodes[0].outgoing.remove(self)
+        self.nodes[1].incoming.remove(self)
+
     # ------------------------------------
 
     def toXML(self, doc: xml.Document) -> xml.Element:
@@ -206,8 +212,8 @@ class Edge(Base, XMLable):
 class Graph:
 
     def __init__(self):
-        self.nodes = []
-        self.edges = []
+        self.nodes: list[Node] = []
+        self.edges: list[Edge] = []
         self.next_id = 0
         self.creation_time = time()
 
@@ -224,6 +230,14 @@ class Graph:
 
         self.nodes.append(node)
 
+
+    def removeNode(self, node: Node):
+
+        for edge in (node.outgoing + node.incoming):
+            self.removeEdge(edge)
+
+        self.nodes.remove(node)
+
     # ------------------------------------
 
     def addEdge(self, node0, node1: Node=None):
@@ -237,6 +251,20 @@ class Graph:
         else: raise TypeError()
 
         return self.edges[-1]
+
+
+    def removeEdge(self, edge: Edge):
+
+        edge.unregister()
+        self.edges.remove(edge)
+
+    # ------------------------------------
+
+    def remove(self, obj: Union[Node, Edge]):
+
+        t = type(obj)
+        if   t is Node: self.removeNode(obj)
+        elif t is Edge: self.removeEdge(obj)
 
     # ------------------------------------
 

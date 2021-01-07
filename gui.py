@@ -5,7 +5,7 @@ Imports
 # Gui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QPalette, QColor, QFont, QPainter, QPixmap, QPen, QBrush
+from PyQt5.QtGui import *
 
 # Misc
 from math import sin, cos, atan2
@@ -51,6 +51,47 @@ class Canvas(QLabel):
 
         self._selection = None
 
+        # ------------------------------------
+        # Right-Click menu stuff
+
+        self.remove = QAction(QIcon.fromTheme('edit-delete'), 'Remove', self)
+        self.remove.triggered.connect(self.removeObject)
+
+        self.menu = QMenu(self)
+        self.menu.addAction(self.remove)
+
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.contextMenu)
+
+        self.menu_selection = None
+
+    # ------------------------------------
+
+    def contextMenu(self, e):
+
+        x, y = e.x(), e.y()
+
+        self.menu_selection = self.getAt(x, y)
+
+        Node.unhighlight()
+        if self.menu_selection is not None:
+
+            self.remove.setEnabled(True)
+            self.menu_selection.highlit = True
+
+        else: self.remove.setEnabled(False)
+
+        self.redraw()
+        self.parent().update()
+        self.menu.exec_(self.mapToGlobal(e))
+
+
+    def removeObject(self):
+
+        self.graph.remove(self.menu_selection)
+        self.redraw()
+        self.parent().update()
+
     # ------------------------------------
 
     def setColor(self, color):
@@ -62,7 +103,7 @@ class Canvas(QLabel):
     def addNode(self, x, y):
         self.graph.addNode(x=x, y=y)
 
-    
+
     def drawNode(self, painter, node: Node):
 
         pen = QPen()
@@ -104,7 +145,7 @@ class Canvas(QLabel):
 
         # ------------------------------------
         # Drawing arrow point
-        
+
         painter.setBrush(Qt.black)
 
         p = vec(x1, y1) + r1
