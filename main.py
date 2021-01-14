@@ -38,7 +38,8 @@ class Move(EventHandler):
     def getName(cls): return "Move"
 
     @classmethod
-    def getIcon(cls): return QIcon.fromTheme("edit-redo")
+    def getIcon(cls):
+        return QIcon("icons/move.png")
 
     @classmethod
     def mousePressEvent(cls, ctx, e):
@@ -68,7 +69,8 @@ class AddNode(EventHandler):
     def getName(cls): return "Add Node"
 
     @classmethod
-    def getIcon(cls): return QIcon.fromTheme("list-add")
+    def getIcon(cls):
+        return QIcon("icons/add-node.png")
 
     @classmethod
     def mousePressEvent(cls, ctx, e):
@@ -95,7 +97,8 @@ class AddEdge(EventHandler):
     def getName(cls): return "Add Edge"
 
     @classmethod
-    def getIcon(cls): return QIcon.fromTheme("edit-select-all")
+    def getIcon(cls):
+        return QIcon("icons/add-edge.png")
 
     @classmethod
     def mousePressEvent(cls, ctx, e):
@@ -210,6 +213,8 @@ class MainWindow(QMainWindow):
 
             self.listbox.insertItem(i, w)
 
+        self.listbox.setMinimumWidth(150)
+        self.listbox.setMaximumWidth(150)
         main_layout.addWidget(self.listbox)
 
         self.canvas = Canvas(width=800, height=600)
