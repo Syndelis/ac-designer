@@ -14,7 +14,7 @@ from vector import vec, Vector
 from data import Graph, Node, Edge, Op, Condition
 
 # Math
-from numpy import arctan
+from numpy import arctan, linalg, sign
 from math import sin, cos, atan2
 
 # ------------------------------------------------------------------------------
@@ -43,10 +43,12 @@ class Move(EventHandler):
 
     @classmethod
     def mousePressEvent(cls, ctx, e):
-        cls.selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
 
-        if type(cls.selection) is Node:
-            Node.unhighlight()
+        cls.selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
+        t = type(cls.selection)
+
+        if t in (Node, Edge):
+            t.unhighlight()
             cls.selection.setHighlight(True)
 
 
@@ -58,8 +60,25 @@ class Move(EventHandler):
 
     @classmethod
     def mouseMoveEvent(cls, ctx, e):
-        if cls.selection:
-            cls.selection.pos = ctx.transformCoords(e.x(), e.y())
+
+        t = type(cls.selection)
+        mouse = ctx.transformCoords(e.x(), e.y())
+
+        if t is Node:
+            cls.selection.pos = mouse
+
+        elif t is Edge:
+
+            # Get vector from the middle point of the edge to the mouse
+            mouse_vec = mouse - cls.selection.calculated
+
+            # Now project that into the actual perpendicular vector of the edge
+            perp = cls.selection.perp
+            proj = mouse_vec.dot(perp) / linalg.norm(perp)**2 * perp
+
+            # Finally, get the projection's, length
+            cls.selection.offset = linalg.norm(proj)
+
 
 # ------------------------------------
 

@@ -9,7 +9,7 @@ from PyQt5.QtGui import *
 
 # Misc
 from math import sin, cos, atan2
-from numpy import matrix
+from numpy import matrix, linalg
 import abc
 
 # Data
@@ -144,6 +144,26 @@ class Canvas(QLabel):
         painter.drawLine(x0 + r0, y0 + r0, x1 + r1, y1 + r1)
 
         # ------------------------------------
+        # Drawing the name holder
+
+        painter.setBrush(Qt.white)
+
+        # Finding the point in the middle
+        edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
+
+        # Now to add the offset
+        #   First: find a perpendicular vector
+        edge.perp = vec(edge.calculated.y, -edge.calculated.x) # x, y -> y, -x
+        
+        edge.perp /= linalg.norm(edge.perp)       # Make it a unit vector
+        edge.perp *= edge.offset             # Multiply by the offset
+
+        x, y = (edge.perp + edge.calculated) # Add the middle
+
+        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
+        painter.drawText(x, y, edge.name)
+
+        # ------------------------------------
         # Drawing arrow point
 
         painter.setBrush(Qt.black)
@@ -158,18 +178,6 @@ class Canvas(QLabel):
         right = v - u * Edge.arrow_width
 
         painter.drawPolygon(QPoint(*p), QPoint(*left), QPoint(*right))
-
-        # ------------------------------------
-        # Drawing the name holder
-
-        painter.setBrush(Qt.white)
-
-        edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
-        x, y = edge.calculated
-
-        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
-
-        painter.drawText(x, y, edge.name)
 
     # ------------------------------------
 
