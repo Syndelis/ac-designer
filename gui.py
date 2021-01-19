@@ -207,6 +207,7 @@ class Canvas(QLabel):
 
         self.pixmap().fill(self.color)
         painter = QPainter(self.pixmap())
+        painter.setRenderHints(QPainter.Antialiasing|QPainter.TextAntialiasing)
 
         for node in self.graph.nodes:
             self.drawNode(painter, node)
