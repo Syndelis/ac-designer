@@ -74,6 +74,7 @@ class Canvas(QLabel):
         self.menu_selection = self.getAt(x, y)
 
         Node.unhighlight()
+        Edge.unhighlight()
         if self.menu_selection is not None:
 
             self.remove.setEnabled(True)
@@ -123,7 +124,7 @@ class Canvas(QLabel):
     def drawEdge(self, painter: QPainter, edge: Edge):
 
         pen = QPen()
-        pen.setColor(QColor('black'))
+        pen.setColor(QColor('blue') if edge.highlit else QColor('black'))
         pen.setWidth(2)
         painter.setPen(pen)
 
@@ -170,7 +171,6 @@ class Canvas(QLabel):
         # ------------------------------------
         # Calculate arrow point
 
-        painter.setBrush(Qt.black)
 
         p = vec(x1, y1) + r1
 
@@ -190,6 +190,7 @@ class Canvas(QLabel):
         painter.drawLine(x1 + r1, y1 + r1, d.x, d.y)
 
         # Arrow Point
+        painter.setBrush(QColor('blue') if edge.highlit else QColor('black'))
         painter.drawPolygon(QPoint(*p), QPoint(*left), QPoint(*right))
 
         # Name holder & Name

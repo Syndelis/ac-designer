@@ -353,6 +353,7 @@ class Graph:
                 )
 
         Node.unhighlight()
+        Edge.unhighlight()
         return g
 
 

@@ -56,6 +56,7 @@ class Move(EventHandler):
     def mouseReleaseEvent(cls, ctx, e):
         cls.selection = None
         Node.unhighlight()
+        Edge.unhighlight()
 
 
     @classmethod
