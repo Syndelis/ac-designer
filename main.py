@@ -76,8 +76,12 @@ class Move(EventHandler):
             perp = cls.selection.perp
             proj = mouse_vec.dot(perp) / linalg.norm(perp)**2 * perp
 
+            """
+            Two vectors form an obtuse angle if their dot product is negative
+            """
+
             # Finally, get the projection's, length
-            cls.selection.offset = linalg.norm(proj)
+            cls.selection.offset = linalg.norm(proj) * sign(perp.dot(proj))
 
 
 # ------------------------------------

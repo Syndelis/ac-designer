@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import *
 
 # Misc
-from math import sin, cos, atan2
+from math import sin, cos, atan2, pi, hypot
 from numpy import matrix, linalg
 import abc
 
@@ -136,48 +136,66 @@ class Canvas(QLabel):
         r1 = nodes[1].radius//2
 
         angle = atan2(y0 - y1, x0 - x1)
-        x0 -= round(cos(angle) * r0)
-        y0 -= round(sin(angle) * r0)
-        x1 += round(cos(angle) * r1)
-        y1 += round(sin(angle) * r1)
-
-        painter.drawLine(x0 + r0, y0 + r0, x1 + r1, y1 + r1)
 
         # ------------------------------------
-        # Drawing the name holder
+        # Calculating the name holder
 
         painter.setBrush(Qt.white)
 
         # Finding the point in the middle
         edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
 
-        # Now to add the offset
-        #   First: find a perpendicular vector
-        edge.perp = vec(edge.calculated.y, -edge.calculated.x) # x, y -> y, -x
-        
-        edge.perp /= linalg.norm(edge.perp)       # Make it a unit vector
-        edge.perp *= edge.offset             # Multiply by the offset
+        dir = vec(cos(angle), sin(angle)) # Direction vector node0 -> node1
 
-        x, y = (edge.perp + edge.calculated) # Add the middle
+        # Perpendicular vector to edge
+        edge.perp = vec(dir @ matrix(((0, 1), (-1, 0))))[0][0]
 
-        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
-        painter.drawText(x, y, edge.name)
+        x, y = edge.final = edge.calculated + edge.perp * edge.offset
 
         # ------------------------------------
-        # Drawing arrow point
+        # Calculate the lines
+
+        d = edge.final + vec(Node.radius, Node.radius/2)
+
+        angle0 = atan2(y0 - y, x0 - x)
+        angle1 = atan2(y - y1, x - x1)
+
+        x0 -= round(cos(angle0) * r0)
+        y0 -= round(sin(angle0) * r0)
+        x1 += round(cos(angle1) * r1)
+        y1 += round(sin(angle1) * r1)
+
+        # ------------------------------------
+        # Calculate arrow point
 
         painter.setBrush(Qt.black)
 
         p = vec(x1, y1) + r1
-        dir = vec(cos(angle), sin(angle))
+
+        dir = vec(cos(angle1), sin(angle1))
 
         v = p + dir * Edge.arrow_height
-        u = vec(dir @ matrix(((0, 1), (-1, 0))))[0][0] # Don't ask about these
 
-        left = v + u * Edge.arrow_width
-        right = v - u * Edge.arrow_width
+        left = v + edge.perp * Edge.arrow_width
+        right = v - edge.perp * Edge.arrow_width
 
+        # ------------------------------------
+        # Now, draw everything
+
+        # Lines
+        painter.drawLine(x0 + r0, y0 + r0, d.x, d.y)
+        painter.drawLine(x1 + r1, y1 + r1, d.x, d.y)
+
+        # Arrow Point
         painter.drawPolygon(QPoint(*p), QPoint(*left), QPoint(*right))
+
+        # Name holder & Name
+        painter.setBrush(QBrush(QColor('white')))
+        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
+
+        painter.setBrush(Qt.NoBrush)
+        painter.drawText(x, y, edge.name)
+
 
     # ------------------------------------
 
@@ -212,8 +230,8 @@ class Canvas(QLabel):
         v = vec(2, 1) * Node.radius
         for edge in self.graph.edges:
 
-            if (pos > edge.calculated - v).all() and\
-               (pos < edge.calculated + v).all():
+            if (pos > edge.final - v).all() and\
+               (pos < edge.final + v).all():
 
                return edge
 
