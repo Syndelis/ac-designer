@@ -335,6 +335,46 @@ class MainWindow(QMainWindow):
 
 # ------------------------------------------------------------------------------
 
+class ColorPicker(QPushButton):
+
+    def __init__(self, *args, color='white', **kwargs):
+
+        super(type(self), self).__init__(*args, **kwargs)
+        self._color = color
+        
+        self.clicked.connect(self.colorPicker)
+        self.setColor(self._color)
+
+
+    def getColor(self):
+        return self._color
+
+
+    def setColor(self, color):
+
+        self._color = color
+
+        pal = self.palette()
+        pal.setColor(QPalette.Button, QColor(color))
+
+        self.setAutoFillBackground(True)
+        self.setPalette(pal)
+        self.update()
+
+
+    def colorPicker(self):
+
+        picker = QColorDialog(self)
+        picker.setCurrentColor(QColor(self.color))
+
+        if picker.exec_():
+            self.color = picker.currentColor().name()
+
+
+    color = property(getColor, setColor)
+
+# ------------------------------------------------------------------------------
+
 class EditNodeWindow(QWidget):
 
     def __init__(self, target: Node, ctx):
@@ -371,6 +411,14 @@ class EditNodeWindow(QWidget):
         lay = QHBoxLayout()
         wid = QWidget()
 
+        lay.addWidget(QLabel("Color"))
+        self.colorbox = ColorPicker(color=self.target.color)
+
+        lay.addWidget(self.colorbox)
+
+        wid.setLayout(lay)
+        main_layout.addWidget(wid)
+
         # ----------------------------------------
         # Buttons
         lay = QHBoxLayout()
@@ -394,6 +442,7 @@ class EditNodeWindow(QWidget):
     def okBtn(self):
 
         self.target.name = self.namebox.text()
+        self.target.color = self.colorbox.color
 
         self.ctx.canvas.redraw()
         self.ctx.update()

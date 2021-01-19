@@ -111,7 +111,10 @@ class Canvas(QLabel):
         pen.setWidth(2)
         painter.setPen(pen)
 
+        painter.setBrush(QColor(node.color))
+
         painter.drawEllipse(*node.pos, node.radius, node.radius)
+        painter.setBrush(Qt.NoBrush)
 
         painter.drawText(*node.pos, node.name)
 

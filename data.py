@@ -115,6 +115,8 @@ class Node(Base, XMLable):
         self.name = name
         self.id = -1 # Adjusted by Graph
 
+        self.color = '#ffffff'
+
         self.pos = vec(x, y)
 
         if radius < 0: radius = type(self).radius
@@ -144,6 +146,7 @@ class Node(Base, XMLable):
         el.setAttribute("name", f"{self.name}")
         el.setAttribute("x", f"{self.pos.x}")
         el.setAttribute("y", f"{self.pos.y}")
+        el.setAttribute("color", f"{self.color}")
 
         return el
 
@@ -321,6 +324,7 @@ class Graph:
             )
 
             n.id = int(attr['id'].value)
+            n.color = attr['color'].value
             g.next_id = max(n.id + 1, g.next_id)
 
             g.addNode(n, newid=False)
@@ -337,7 +341,7 @@ class Graph:
             e = g.addEdge(*nodes)
             e.name = attr['name'].value
             e.probability = int(attr['probability'].value)
-            e.offset = int(attr['offset'].value)
+            e.offset = float(attr['offset'].value)
             
             for condition in edge.getElementsByTagName("condition"):
                 
