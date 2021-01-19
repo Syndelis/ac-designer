@@ -366,6 +366,11 @@ class EditNodeWindow(QWidget):
         wid.setLayout(lay)
         main_layout.addWidget(wid)
 
+        # ------------------------------------
+        # Color picker
+        lay = QHBoxLayout()
+        wid = QWidget()
+
         # ----------------------------------------
         # Buttons
         lay = QHBoxLayout()

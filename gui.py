@@ -125,7 +125,6 @@ class Canvas(QLabel):
         painter.setPen(pen)
 
         # ------------------------------------
-        # Drawing the line
 
         nodes = edge.nodes
 
@@ -175,9 +174,10 @@ class Canvas(QLabel):
         dir = vec(cos(angle1), sin(angle1))
 
         v = p + dir * Edge.arrow_height
+        u = vec(dir @ matrix(((0, 1), (-1, 0))))[0][0]
 
-        left = v + edge.perp * Edge.arrow_width
-        right = v - edge.perp * Edge.arrow_width
+        left = v + u * Edge.arrow_width
+        right = v - u * Edge.arrow_width
 
         # ------------------------------------
         # Now, draw everything
