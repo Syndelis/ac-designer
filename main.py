@@ -17,6 +17,9 @@ from data import Graph, Node, Edge, Op, Condition
 from numpy import arctan, linalg, sign
 from math import sin, cos, atan2
 
+# Good practices
+from typing import Union
+
 # ------------------------------------------------------------------------------
 """
 Globals
@@ -241,7 +244,7 @@ class MainWindow(QMainWindow):
         self.listbox.setMaximumWidth(150)
         main_layout.addWidget(self.listbox)
 
-        self.canvas = Canvas(width=800, height=600)
+        self.canvas = Canvas(main=self, width=800, height=600)
         main_layout.addWidget(self.canvas)
 
         main_widget.setLayout(main_layout)
@@ -292,14 +295,18 @@ class MainWindow(QMainWindow):
         if e.button() > 1: return
         
         at = self.canvas.getAt(self.transformCoords(e.x(), e.y()))
+        self.launchEditor(at)
 
-        if type(at) is Edge:
-            self.edge_editor = EditEdgeWindow(at, self)
+
+    def launchEditor(self, obj: Union[Node, Edge]):
+
+        if type(obj) is Edge:
+            self.edge_editor = EditEdgeWindow(obj, self)
             self.edge_editor.show()
 
         
-        elif type(at) is Node:
-            self.node_editor = EditNodeWindow(at, self)
+        elif type(obj) is Node:
+            self.node_editor = EditNodeWindow(obj, self)
             self.node_editor.show()
 
     # ------------------------------------
@@ -420,6 +427,38 @@ class EditNodeWindow(QWidget):
         wid.setLayout(lay)
         main_layout.addWidget(wid)
 
+        # ------------------------------------
+        # Edge order
+
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+
+        main_layout.addWidget(line)
+
+        lay = QVBoxLayout()
+        wid = QWidget()
+
+        lay.addWidget(QLabel("Outgoing edge execution order"))
+
+        self.list = QListWidget()
+        for edge in self.target.outgoing:
+            e = QListWidgetItem()
+            e.setText(edge.name)
+            e.setIcon(QIcon.fromTheme('format-justify-fill'))
+            e.setData(DATA_INDEX, edge)
+            self.list.addItem(e)
+
+        self.list.setDragDropMode(QAbstractItemView.InternalMove)
+
+        self.list.setToolTip(
+            "Here you can rearrange the order of edge execution.")
+
+        lay.addWidget(self.list)
+
+        wid.setLayout(lay)
+        main_layout.addWidget(wid)
+
         # ----------------------------------------
         # Buttons
         lay = QHBoxLayout()
@@ -512,15 +551,6 @@ class ConditionOp(QWidget):
         lay.addWidget(self._amnt)
 
         # ------------------------------------
-        # Remove button
-
-        # remove = QPushButton()
-        # remove.setIcon(QIcon.fromTheme("list-remove"))
-        # remove.clicked.connect(self.removeBtn)
-
-        # lay.addWidget(remove)
-
-        # ------------------------------------
 
         self.setLayout(lay)
 
@@ -548,6 +578,9 @@ class EditEdgeWindow(QWidget):
         super(type(self), self).__init__()
         self.target = target
         self.ctx = ctx
+
+        if not self.target.name:
+            self.target.name = f'New Edge'
 
         self.target_conditions = self.target.conditions.copy()
         self.initWidgets()
@@ -704,7 +737,7 @@ class EditEdgeWindow(QWidget):
                 cond.amnt
             )
 
-        self.target.register()
+        if not self.target.registered: self.target.register()
 
         if not self.target in self.ctx.canvas.graph.edges:
             self.ctx.canvas.graph.addEdge(self.target)

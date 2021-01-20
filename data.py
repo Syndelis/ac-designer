@@ -170,6 +170,7 @@ class Edge(Base, XMLable):
         self.probability = 100
 
         self.offset = 30 # Drawing-related
+        self.registered = False
 
         type(self).unhighlight()
         self.setHighlight(highlit)
@@ -190,11 +191,13 @@ class Edge(Base, XMLable):
     def register(self):
         self.nodes[0].outgoing.append(self)
         self.nodes[1].incoming.append(self)
+        self.registered = True
 
 
     def unregister(self):
         self.nodes[0].outgoing.remove(self)
         self.nodes[1].incoming.remove(self)
+        self.registered = False
 
     # ------------------------------------
 

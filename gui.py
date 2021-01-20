@@ -4,11 +4,11 @@ Imports
 
 # Gui
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QLineF, QRectF
 from PyQt5.QtGui import *
 
 # Misc
-from math import sin, cos, atan2, pi, hypot
+from math import sin, cos, atan2, pi, hypot, acos
 from numpy import matrix, linalg
 import abc
 
@@ -37,7 +37,8 @@ class Color(QWidget):
 # The main drawing frame
 class Canvas(QLabel):
 
-    def __init__(self, *args, graph: Graph=None, width=400,height=300,**kwargs):
+    def __init__(self, main, *args, graph: Graph=None,
+                 width=400, height=300, **kwargs):
 
         super().__init__(*args, **kwargs)
 
@@ -45,6 +46,8 @@ class Canvas(QLabel):
         self.setPixmap(canvas)
         self.color = QColor('white')
         self.setColor(self.color)
+
+        self.main = main
 
         if graph is None:   self.graph = Graph()
         else:               self.graph = graph
@@ -54,10 +57,14 @@ class Canvas(QLabel):
         # ------------------------------------
         # Right-Click menu stuff
 
+        self.edit = QAction(QIcon.fromTheme('document-open-recent'), 'Edit', self)
+        self.edit.triggered.connect(self.editObject)
+
         self.remove = QAction(QIcon.fromTheme('edit-delete'), 'Remove', self)
         self.remove.triggered.connect(self.removeObject)
 
         self.menu = QMenu(self)
+        self.menu.addAction(self.edit)
         self.menu.addAction(self.remove)
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -77,14 +84,22 @@ class Canvas(QLabel):
         Edge.unhighlight()
         if self.menu_selection is not None:
 
+            self.edit.setEnabled(True)
             self.remove.setEnabled(True)
             self.menu_selection.highlit = True
 
-        else: self.remove.setEnabled(False)
+        else:
+            self.edit.setEnabled(False)
+            self.remove.setEnabled(False)
 
         self.redraw()
         self.parent().update()
         self.menu.exec_(self.mapToGlobal(e))
+
+
+    def editObject(self):
+        
+        self.main.launchEditor(self.menu_selection)
 
 
     def removeObject(self):
