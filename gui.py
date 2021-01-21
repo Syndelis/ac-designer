@@ -161,7 +161,7 @@ class Canvas(QLabel):
         painter.setBrush(Qt.white)
 
         # Finding the point in the middle
-        edge.calculated = (nodes[0].pos + nodes[1].pos - Node.radius) / 2
+        edge.calculated = (nodes[0].pos + nodes[1].pos + Node.radius) / 2
 
         dir = vec(cos(angle), sin(angle)) # Direction vector node0 -> node1
 
@@ -186,7 +186,6 @@ class Canvas(QLabel):
         # ------------------------------------
         # Calculate arrow point
 
-
         p = vec(x1, y1) + r1
 
         dir = vec(cos(angle1), sin(angle1))
@@ -201,19 +200,24 @@ class Canvas(QLabel):
         # Now, draw everything
 
         # Lines
-        painter.drawLine(x0 + r0, y0 + r0, d.x, d.y)
-        painter.drawLine(x1 + r1, y1 + r1, d.x, d.y)
+        painter.drawLine(x0 + r0, y0 + r0, x, y)
+        painter.drawLine(x1 + r1, y1 + r1, x, y)
 
         # Arrow Point
         painter.setBrush(QColor('blue') if edge.highlit else QColor('black'))
         painter.drawPolygon(QPoint(*p), QPoint(*left), QPoint(*right))
 
         # Name holder & Name
-        painter.setBrush(QBrush(QColor('white')))
-        painter.drawRoundedRect(x, y, Node.radius*2, Node.radius, 15, 15)
+        rect = painter.fontMetrics().boundingRect(edge.name)
 
+        w = rect.width() * Edge.size_multiplier
+        h = rect.height() * Edge.size_multiplier
+        rect = QRectF(x - w/2, y - h/2, w, h)
+
+        painter.setBrush(QBrush(QColor('white')))
+        painter.drawRoundedRect(rect, Edge.box_angle, Edge.box_angle)
         painter.setBrush(Qt.NoBrush)
-        painter.drawText(x, y, edge.name)
+        painter.drawText(rect, Qt.AlignCenter, edge.name)
 
 
     # ------------------------------------

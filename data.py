@@ -158,6 +158,8 @@ class Edge(Base, XMLable):
     lit = []
     arrow_width = 5
     arrow_height = 8
+    size_multiplier = 1.5
+    box_angle = 15
 
     def __init__(self, node0: Node, node1: Node, highlit=True, register=True):
 
