@@ -69,12 +69,12 @@ class Move(EventHandler):
         mouse = ctx.transformCoords(e.x(), e.y())
 
         if t is Node:
-            cls.selection.pos = mouse
+            cls.selection.pos = mouse + ctx.canvas.cam
 
         elif t is Edge:
 
             # Get vector from the middle point of the edge to the mouse
-            mouse_vec = mouse - cls.selection.calculated
+            mouse_vec = mouse + ctx.canvas.cam - cls.selection.calculated
 
             # Now project that into the actual perpendicular vector of the edge
             perp = cls.selection.perp
@@ -147,7 +147,7 @@ class AddEdge(EventHandler):
                             ctx
                         )
             cls.window.show()
-        
+
         ctx.canvas.unhighlight()
         cls.edge[:] = None, None
 
@@ -156,7 +156,7 @@ class AddEdge(EventHandler):
     def mouseMoveEvent(cls, ctx, e):
 
         if cls.edge[0]:
-        
+
             mouse = ctx.transformCoords(e.x(), e.y())
             selection = ctx.canvas.getAt(mouse)
 
@@ -169,18 +169,18 @@ class AddEdge(EventHandler):
             ctx.canvas.unhighlight()
             cls.edge[1] = selection
 
-            x0, y0 = cls.edge[0].pos.astype(int)
+            x0, y0 = (cls.edge[0].pos - ctx.canvas.cam).astype(int)
             r0 = cls.edge[0].radius//2
 
             if type(selection) is Node:
 
-                x1, y1 = selection.pos.astype(int)
+                x1, y1 = (selection.pos - ctx.canvas.cam).astype(int)
                 r1 = selection.radius // 2
                 selection.highlit = True
 
             else:
 
-                x1, y1 = mouse.astype(int)
+                x1, y1 = (mouse - ctx.canvas.cam).astype(int)
                 r1 = r0
 
 
@@ -201,6 +201,10 @@ class MainWindow(QMainWindow):
 
     node_editor = None
     edge_editor = None
+
+    old_mouse = None
+    old_cam = None
+    button = 0
 
     def __init__(self):
 
@@ -250,6 +254,9 @@ class MainWindow(QMainWindow):
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
 
+        self.canvas.redraw()
+        self.update()
+
     # ------------------------------------
 
     def getSelection(self):
@@ -259,41 +266,66 @@ class MainWindow(QMainWindow):
 
     def mousePressEvent(self, e):
 
-        if e.button() > 1: return
+        self.button = e.button()
 
-        handler = self.getSelection()
-        handler.mousePressEvent(self, e)
-        self.canvas.redraw()
+        if e.button() & Qt.LeftButton:
 
-        self.update()
+            handler = self.getSelection()
+            handler.mousePressEvent(self, e)
+            self.canvas.redraw()
+
+            self.update()
+
+        elif e.button() & Qt.MiddleButton:
+            self.old_mouse = vec(e.x(), e.y())
+            self.old_cam = self.canvas.cam
 
 
     def mouseReleaseEvent(self, e):
 
-        if e.button() > 1: return
+        self.button = 0
 
-        handler = self.getSelection()
-        handler.mouseReleaseEvent(self, e)
-        self.canvas.redraw()
+        if e.button() & Qt.LeftButton:
 
-        self.update()
+            handler = self.getSelection()
+            handler.mouseReleaseEvent(self, e)
+            self.canvas.redraw()
+
+            self.update()
+
+        elif e.button() & Qt.MiddleButton:
+            self.canvas.cam = self.old_cam +\
+                (self.old_mouse - vec(e.x(), e.y())).astype(int)
+
+            self.canvas.cam.apply(lambda i: max(0, i))
+
+            self.old_mouse = None
+            self.old_cam = None
 
 
     def mouseMoveEvent(self, e):
 
-        if e.button() > 1: return
+        if self.button & Qt.LeftButton:
+            self.canvas.redraw()
+            handler = self.getSelection()
+            handler.mouseMoveEvent(self, e)
 
-        self.canvas.redraw()
-        handler = self.getSelection()
-        handler.mouseMoveEvent(self, e)
+            self.update()
 
-        self.update()
+        elif self.button & Qt.MiddleButton:
+            self.canvas.cam = self.old_cam +\
+                (self.old_mouse - vec(e.x(), e.y())).astype(int)
+
+            self.canvas.cam.apply(lambda i: max(0, i))
+
+            self.canvas.redraw()
+            self.update()
 
 
     def mouseDoubleClickEvent(self, e):
 
         if e.button() > 1: return
-        
+
         at = self.canvas.getAt(self.transformCoords(e.x(), e.y()))
         self.launchEditor(at)
 
@@ -304,7 +336,7 @@ class MainWindow(QMainWindow):
             self.edge_editor = EditEdgeWindow(obj, self)
             self.edge_editor.show()
 
-        
+
         elif type(obj) is Node:
             self.node_editor = EditNodeWindow(obj, self)
             self.node_editor.show()
@@ -314,7 +346,7 @@ class MainWindow(QMainWindow):
     def transformCoords(self, x, y) -> Vector:
 
         rec = self.canvas.geometry()
-        r = vec(0, 0) + Node.radius 
+        r = vec(0, 0) + Node.radius
 
         return vec(
             x - self.listbox.geometry().width() - MOUSE_DIFF, y - MOUSE_DIFF
@@ -325,7 +357,7 @@ class MainWindow(QMainWindow):
 
         filename = QFileDialog.getSaveFileName(
             self, "Save Model", ".", "Graph (*.xml)")
-        
+
         if filename:
             self.canvas.graph.saveXML(filename[0])
 
@@ -349,7 +381,7 @@ class ColorPicker(QPushButton):
 
         super(type(self), self).__init__(*args, **kwargs)
         self._color = color
-        
+
         self.clicked.connect(self.colorPicker)
         self.setColor(self._color)
 
@@ -394,7 +426,7 @@ class EditNodeWindow(QWidget):
 
 
     def initWidgets(self):
-        
+
         main_layout = QVBoxLayout()
 
         # ----------------------------------------
@@ -472,7 +504,7 @@ class EditNodeWindow(QWidget):
 
         lay.addWidget(ok)
         lay.addWidget(cancel)
-        
+
         wid.setLayout(lay)
         main_layout.addWidget(wid)
 
@@ -587,7 +619,7 @@ class EditEdgeWindow(QWidget):
 
 
     def initWidgets(self):
-        
+
         main_layout = QVBoxLayout()
 
         # ------------------------------------
@@ -666,7 +698,7 @@ class EditEdgeWindow(QWidget):
 
         lay.addWidget(ok)
         lay.addWidget(cancel)
-        
+
         wid.setLayout(lay)
         main_layout.addWidget(wid)
 
@@ -710,7 +742,7 @@ class EditEdgeWindow(QWidget):
         remove = QPushButton()
         remove.setIcon(QIcon.fromTheme('list-remove'))
         remove.clicked.connect(self.removeBtn(len(self.conditionOps)))
-        
+
         l.addWidget(remove)
         w.setLayout(l)
 

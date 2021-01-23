@@ -27,6 +27,13 @@ def vec(*args, **kwargs):
 
 class Vector(ndarray):
 
+    def apply(self, func):
+
+        for i in range(len(self)):
+            self[i] = func(self[i])
+
+        return self
+
     def __getattr__(self, attr):
 
         try:
