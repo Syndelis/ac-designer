@@ -41,9 +41,12 @@ class Canvas(QLabel):
     text_offset = 5
 
     def __init__(self, main, *args, graph: Graph=None,
-                 width=400, height=300, **kwargs):
+                 width=800, height=600, **kwargs):
 
         super().__init__(*args, **kwargs)
+
+        self.setMinimumWidth(width)
+        self.setMinimumHeight(height)
 
         canvas = QPixmap(width, height)
         self.setPixmap(canvas)
@@ -316,6 +319,18 @@ class Canvas(QLabel):
                return edge
 
         return None
+
+    # ------------------------------------
+
+    def resizeEvent(self, e):
+        
+        width = e.size().width()
+        height = e.size().height()
+        canvas = QPixmap(width, height)
+        self.setPixmap(canvas)
+
+        self.redraw()
+        self.parent().update()
 
     # ------------------------------------
 
