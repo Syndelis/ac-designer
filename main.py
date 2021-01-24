@@ -519,6 +519,14 @@ class EditNodeWindow(QWidget):
         self.ctx.canvas.redraw()
         self.ctx.update()
 
+        edges = [
+            self.list.item(i).data(DATA_INDEX)
+            for i in range(self.list.count())
+        ]
+
+        for edge in edges: self.ctx.canvas.graph.edges.remove(edge)
+        self.ctx.canvas.graph.edges.extend(edges)
+
         self.close()
 
 

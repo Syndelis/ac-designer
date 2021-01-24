@@ -5,14 +5,16 @@
 + Add custom icons for the list
 + Adjust text positions of Nodes and Edges
 + Add Edge anchor point
-- Generate code
 
 #### NODES
 
 + Node color picker
-- Probability weight
-- Arrangement of edges
++ Arrangement of edges
 
-####
+#### CODE GENERATION
+
+- Simulation Window
+- Generate Code
+- Probability weight
 
 https://ufsj.edu.br/pic/relatorios.php
