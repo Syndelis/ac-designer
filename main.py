@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QFont, QIcon, QPainter, QPen
 
 from gui import Canvas, EventHandler
+from simulation import SimulationWindow
 
 # Data
 from vector import vec, Vector
@@ -213,16 +214,26 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("AC Designer")
         self.setMouseTracking(True)
 
+        menubar = self.menuBar()
+        # File Menu ------------------------
+
         save_act = QAction('Save', self)
         save_act.triggered.connect(self.saveXML)
 
         load_act = QAction('Load', self)
         load_act.triggered.connect(self.loadXML)
 
-        menubar = self.menuBar()
         file_menu = menubar.addMenu('File')
         file_menu.addAction(save_act)
         file_menu.addAction(load_act)
+
+        # Simulation Menu ------------------
+
+        run_act = QAction('Run', self)
+        run_act.triggered.connect(self.runAction)
+
+        simulation_menu = menubar.addMenu('Simulation')
+        simulation_menu.addAction(run_act)
 
         self.initWidgets()
 
@@ -372,6 +383,13 @@ class MainWindow(QMainWindow):
             self.canvas.redraw()
             self.update()
 
+    # ------------------------------------
+
+    def runAction(self):
+
+        # TODO
+        self.simulation_window = SimulationWindow(self.canvas.graph)
+        self.simulation_window.show()
 
 # ------------------------------------------------------------------------------
 
