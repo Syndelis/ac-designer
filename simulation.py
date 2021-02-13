@@ -4,6 +4,8 @@ Imports
 
 # GUI
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import QRect
 
 # Data
 from data import Graph, Node, Edge, Condition
@@ -15,12 +17,17 @@ Program Class
 
 class SimulationFrame(QLabel):
 
-    def __init__(self, width=600, height=600, dimension=30, *args, **kwargs):
+    def __init__(self, graph, width=600, height=600, dimension=30, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         self.setMinimumWidth(width)
         self.setMinimumHeight(height)
+
+        canvas = QPixmap(width, height)
+        self.setPixmap(canvas)
+
+        self.graph = graph
 
         # TODO:
         # - NxM rather than NxN
@@ -40,14 +47,14 @@ class SimulationFrame(QLabel):
         painter = QPainter(self.pixmap())
         painter.setRenderHints(QPainter.Antialiasing|QPainter.TextAntialiasing)
         
-        painter.setPen(None)
+        # painter.setPen(None)
 
         for y in range(0, h, self._dimension):
             for x in range(0, w, self._dimension):
 
                 rect = QRect(x, y, x+self._dimension, y+self._dimension)
                 el = self.initial[x//self._dimension][y//self._dimension]
-                painter.setBrush(self.graph.nodes[el].color)
+                painter.setBrush(QColor(self.graph.nodes[el].color))
 
                 painter.drawRect(rect)
 
@@ -88,7 +95,10 @@ class SimulationWindow(QWidget):
         wid.setLayout(lay)
         main_layout.addWidget(wid)
 
-        self.canvas = SimulationFrame()
+        self.canvas = SimulationFrame(self.graph)
 
         main_layout.addWidget(self.canvas)
         self.setLayout(main_layout)
+
+        self.canvas.redraw()
+        self.update()
