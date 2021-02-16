@@ -388,8 +388,20 @@ class MainWindow(QMainWindow):
     def runAction(self):
 
         # TODO
-        self.simulation_window = SimulationWindow(self.canvas.graph)
-        self.simulation_window.show()
+
+        if len(self.canvas.graph.nodes) > 1:
+
+            self.simulation_window = SimulationWindow(self.canvas.graph)
+            self.simulation_window.show()
+
+        
+        else:
+
+            msg = QMessageBox()
+            msg.setText(
+                "You need at least 2 nodes in order to simulate something.")
+
+            msg.exec()
 
 # ------------------------------------------------------------------------------
 
