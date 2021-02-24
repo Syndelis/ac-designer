@@ -125,7 +125,7 @@ class Canvas(QLabel):
     # ------------------------------------
 
     def addNode(self, x, y):
-        self.graph.addNode(x=x, y=y)
+        self.graph.addNode(x=x + self.cam.x, y=y + self.cam.y)
 
 
     def drawNode(self, painter, node: Node):

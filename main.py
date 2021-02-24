@@ -88,6 +88,48 @@ class Move(EventHandler):
             # Finally, get the projection's, length
             cls.selection.offset = linalg.norm(proj) * sign(perp.dot(proj))
 
+# ------------------------------------
+
+class Pan(EventHandler):
+
+    old_mouse = old_cam = None
+
+    @classmethod
+    def getName(cls): return "Pan"
+
+    @classmethod
+    def getIcon(cls):
+        return QIcon("icons/pan.png")
+
+    @classmethod
+    def mousePressEvent(cls, ctx, e):
+
+        cls.old_mouse = vec(e.x(), e.y())
+        cls.old_cam = ctx.canvas.cam
+
+
+    @classmethod
+    def mouseReleaseEvent(cls, ctx, e):
+
+        ctx.canvas.cam = cls.old_cam +\
+            (cls.old_mouse - vec(e.x(), e.y())).astype(int)
+
+        ctx.canvas.cam.apply(lambda i: max(0, i))
+
+        cls.old_mouse = None
+        cls.old_cam = None
+
+
+    @classmethod
+    def mouseMoveEvent(cls, ctx, e):
+
+        ctx.canvas.cam = cls.old_cam +\
+            (cls.old_mouse - vec(e.x(), e.y())).astype(int)
+
+        ctx.canvas.cam.apply(lambda i: max(0, i))
+
+        ctx.canvas.redraw()
+        ctx.update()
 
 # ------------------------------------
 
@@ -288,8 +330,7 @@ class MainWindow(QMainWindow):
             self.update()
 
         elif e.button() & Qt.MiddleButton:
-            self.old_mouse = vec(e.x(), e.y())
-            self.old_cam = self.canvas.cam
+            Pan.mousePressEvent(self, e)
 
 
     def mouseReleaseEvent(self, e):
@@ -305,13 +346,7 @@ class MainWindow(QMainWindow):
             self.update()
 
         elif e.button() & Qt.MiddleButton:
-            self.canvas.cam = self.old_cam +\
-                (self.old_mouse - vec(e.x(), e.y())).astype(int)
-
-            self.canvas.cam.apply(lambda i: max(0, i))
-
-            self.old_mouse = None
-            self.old_cam = None
+            Pan.mouseReleaseEvent(self, e)
 
 
     def mouseMoveEvent(self, e):
@@ -324,13 +359,7 @@ class MainWindow(QMainWindow):
             self.update()
 
         elif self.button & Qt.MiddleButton:
-            self.canvas.cam = self.old_cam +\
-                (self.old_mouse - vec(e.x(), e.y())).astype(int)
-
-            self.canvas.cam.apply(lambda i: max(0, i))
-
-            self.canvas.redraw()
-            self.update()
+            Pan.mouseMoveEvent(self, e)
 
 
     def mouseDoubleClickEvent(self, e):
@@ -394,7 +423,7 @@ class MainWindow(QMainWindow):
             self.simulation_window = SimulationWindow(self.canvas.graph)
             self.simulation_window.show()
 
-        
+
         else:
 
             msg = QMessageBox()
