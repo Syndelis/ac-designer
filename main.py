@@ -18,6 +18,9 @@ from data import Graph, Node, Edge, Op, Condition
 from numpy import arctan, linalg, sign
 from math import sin, cos, atan2
 
+# Matplot
+from matplotlib.pyplot import get_cmap
+
 # Good practices
 from typing import Union
 
@@ -269,6 +272,26 @@ class MainWindow(QMainWindow):
         file_menu.addAction(save_act)
         file_menu.addAction(load_act)
 
+        # Color Menu -----------------------
+        cm_categories = {
+            'Uniform': ('viridis', 'plasma', 'inferno', 'magma', 'cividis'),
+            'Misc': ('terrain', 'gnuplot2', 'brg', 'gist_rainbow', 'jet')
+        }
+
+        color_menu = menubar.addMenu('Colorize')
+
+        for category, cms in cm_categories.items():
+
+            c = color_menu.addMenu(category)
+
+            for cm in cms:
+                a = QAction(cm.capitalize(), self)
+                a.triggered.connect(self.colorize(cm))
+
+                c.addAction(a)
+
+            color_menu.addMenu(c)
+
         # Simulation Menu ------------------
 
         run_act = QAction('Run', self)
@@ -369,6 +392,7 @@ class MainWindow(QMainWindow):
         at = self.canvas.getAt(self.transformCoords(e.x(), e.y()))
         self.launchEditor(at)
 
+    # ------------------------------------
 
     def launchEditor(self, obj: Union[Node, Edge]):
 
@@ -432,6 +456,22 @@ class MainWindow(QMainWindow):
 
             msg.exec()
 
+    
+    def colorize(self, cmname):
+
+        def inner():
+
+            cm = get_cmap(cmname)
+            rate = 1 / len(self.canvas.graph.nodes)
+
+            for i, node in enumerate(self.canvas.graph.nodes):
+                node.color = QColor(*cm(rate*i, bytes=True, alpha=255))
+
+            self.canvas.redraw()
+            self.update()
+
+        return inner
+
 # ------------------------------------------------------------------------------
 
 class ColorPicker(QPushButton):
@@ -489,31 +529,18 @@ class EditNodeWindow(QWidget):
         main_layout = QVBoxLayout()
 
         # ----------------------------------------
-        # Name
+        # Name & Color
 
-        lay = QHBoxLayout()
+        lay = QFormLayout()
         wid = QWidget()
-
-        lay.addWidget(QLabel("Name"))
 
         self.namebox = QLineEdit()
         self.namebox.setText(self.target.name)
         self.namebox.returnPressed.connect(self.okBtn)
+        lay.addRow("Name:", self.namebox)
 
-        lay.addWidget(self.namebox)
-
-        wid.setLayout(lay)
-        main_layout.addWidget(wid)
-
-        # ------------------------------------
-        # Color picker
-        lay = QHBoxLayout()
-        wid = QWidget()
-
-        lay.addWidget(QLabel("Color"))
         self.colorbox = ColorPicker(color=self.target.color)
-
-        lay.addWidget(self.colorbox)
+        lay.addRow("Color:", self.colorbox)
 
         wid.setLayout(lay)
         main_layout.addWidget(wid)
@@ -690,34 +717,21 @@ class EditEdgeWindow(QWidget):
         main_layout = QVBoxLayout()
 
         # ------------------------------------
-        # Name
+        # Name & Probability
 
-        lay = QHBoxLayout()
+        lay = QFormLayout()
         wid = QWidget()
 
-        namelabel = QLabel("Name:")
         self.namebox = QLineEdit()
         self.namebox.setText(self.target.name)
         self.namebox.returnPressed.connect(self.okBtn)
+        lay.addRow("Name:", self.namebox)
 
-        lay.addWidget(namelabel)
-        lay.addWidget(self.namebox)
-        wid.setLayout(lay)
-        main_layout.addWidget(wid)
-
-        # ------------------------------------
-        # Probability
-
-        lay = QHBoxLayout()
-        wid = QWidget()
-
-        problabel = QLabel("Probability (%):")
         self.probbox = QSpinBox(self)
         self.probbox.setMaximum(100)
         self.probbox.setValue(self.target.probability)
+        lay.addRow("Probability (%):", self.probbox)
 
-        lay.addWidget(problabel)
-        lay.addWidget(self.probbox)
         wid.setLayout(lay)
         main_layout.addWidget(wid)
 
