@@ -12,7 +12,54 @@ from data import Graph, Node, Edge, Condition
 
 # ------------------------------------------------------------------------------
 """
-Program Class
+Auxiliary Functions
+"""
+
+MAXIMUM_STRING_LENGTH = 8
+def formattedLabel(text: str) -> QLabel:
+
+    if len(text) > MAXIMUM_STRING_LENGTH:
+        s = text[:MAXIMUM_STRING_LENGTH] + '…'
+
+    else: s = text
+
+    return QLabel(s)
+
+# ------------------------------------------------------------------------------
+"""
+Auxiliary Classes
+"""
+
+class ColorButton(QPushButton):
+
+    def __init__(self, *args, color='white', **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self._color = color
+        self.setColor(self._color)
+
+
+    def getColor(self):
+        return self._color
+
+
+    def setColor(self, color):
+
+        self._color = color
+
+        pal = self.palette()
+        pal.setColor(QPalette.Button, QColor(color))
+
+        self.setAutoFillBackground(True)
+        self.setPalette(pal)
+        self.update()
+
+
+    color = property(getColor, setColor)
+
+# ------------------------------------------------------------------------------
+"""
+Program Classes
 """
 
 class SimulationFrame(QLabel):
@@ -77,7 +124,6 @@ class SimulationFrame(QLabel):
         self.parent().update()
 
     
-    
     def getDimension(self):
         return self._dimension
 
@@ -91,11 +137,15 @@ class SimulationFrame(QLabel):
 
 class SimulationDistribution(QWidget):
 
-    def __init__(self, names):
+    def __init__(self, names_colors):
         
         super(type(self), self).__init__()
-        self.names = names
+
+        self.names_colors = names_colors
         self.sliders = []
+        self.buttons = []
+
+        self.old_check = None
 
         # --------------------------------------
 
@@ -104,32 +154,34 @@ class SimulationDistribution(QWidget):
 
     def initWidgets(self):
 
-        main_layout = QVBoxLayout()
+        # main_layout = QVBoxLayout()
+        main_layout = QGridLayout()
+        main_layout.setVerticalSpacing(1)
 
-        for name in self.names:
-            
-            vlay = QVBoxLayout()
-            vwid = QWidget()
+        for i, name_color in enumerate(self.names_colors):
 
-            vlay.addWidget(QLabel(name))
+            name, color = name_color
 
-            lay = QHBoxLayout()
-            wid = QWidget()
+            lab = QLabel("0.0%")
 
             sl = QSlider(Qt.Horizontal)
             sl.valueChanged.connect(self.updateSliders)
-            lay.addWidget(sl)
 
-            lab = QLabel("0")
-            lay.addWidget(lab)
+            row = i*2
+            main_layout.addWidget(formattedLabel(name), row, 0)
+
+            btn = ColorButton(color=color)
+            btn.setCheckable(True)
+            btn.clicked.connect(self.updateButtons(len(self.buttons)))
+
+            self.buttons.append(btn)
+
+            main_layout.addWidget(btn, row, 1)
+            main_layout.addWidget(sl, row+1, 0)
+            main_layout.addWidget(lab, row+1, 1)
 
             self.sliders.append((sl, lab))
 
-            wid.setLayout(lay)
-            vlay.addWidget(wid)
-
-            vwid.setLayout(vlay)
-            main_layout.addWidget(vwid)
 
         self.setLayout(main_layout)
 
@@ -149,6 +201,25 @@ class SimulationDistribution(QWidget):
         self.parent().update()
 
 
+    def updateButtons(self, ind):
+
+        def inner():
+            
+            if self.old_check is not None:
+
+                if self.old_check is not self.buttons[ind]:
+                    self.old_check.setChecked(False)
+
+                self.old_check.setIcon(QIcon())
+
+            if self.buttons[ind].isChecked():
+
+                print('yes')
+                self.old_check = self.buttons[ind]
+                self.old_check.setIcon(QIcon.fromTheme("media-record"))
+                print(self.old_check.icon())
+
+        return inner
 
 # ------------------------------------------------------------------------------
 
@@ -158,6 +229,10 @@ class SimulationWindow(QWidget):
         
         super(type(self), self).__init__()
         self.graph = graph
+
+        self.button = 0
+
+        self.setMouseTracking(True)
 
         self.initWidgets()
 
@@ -175,7 +250,7 @@ class SimulationWindow(QWidget):
 
         # Buttons, sliders, etc...
         lay.addWidget(SimulationDistribution(
-            node.name for node in self.graph.nodes
+            (node.name, node.color) for node in self.graph.nodes
         ))
 
         wid.setLayout(lay)
@@ -188,3 +263,16 @@ class SimulationWindow(QWidget):
 
         self.canvas.redraw()
         self.update()
+
+    # ------------------------------------
+
+    def mousePressEvent(self, e):
+        self.button = e.button()
+
+    
+    def mouseMoveEvent(self, e):
+        pass
+
+    
+    def mouseReleaseEvent(self, e):
+        self.button = 0

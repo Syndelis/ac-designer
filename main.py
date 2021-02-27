@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QFont, QIcon, QPainter, QPen
 
 from gui import Canvas, EventHandler
-from simulation import SimulationWindow
+from simulation import SimulationWindow, ColorButton
 
 # Data
 from vector import vec, Vector
@@ -286,7 +286,7 @@ class MainWindow(QMainWindow):
 
             for cm in cms:
                 a = QAction(cm.capitalize(), self)
-                a.triggered.connect(self.colorize(cm))
+                a.triggered.connect(self.colorizeAction(cm))
 
                 c.addAction(a)
 
@@ -457,7 +457,7 @@ class MainWindow(QMainWindow):
             msg.exec()
 
     
-    def colorize(self, cmname):
+    def colorizeAction(self, cmname):
 
         def inner():
 
@@ -474,31 +474,12 @@ class MainWindow(QMainWindow):
 
 # ------------------------------------------------------------------------------
 
-class ColorPicker(QPushButton):
+class ColorPicker(ColorButton):
 
     def __init__(self, *args, color='white', **kwargs):
 
-        super(type(self), self).__init__(*args, **kwargs)
-        self._color = color
-
+        super(type(self), self).__init__(*args, color=color, **kwargs)
         self.clicked.connect(self.colorPicker)
-        self.setColor(self._color)
-
-
-    def getColor(self):
-        return self._color
-
-
-    def setColor(self, color):
-
-        self._color = color
-
-        pal = self.palette()
-        pal.setColor(QPalette.Button, QColor(color))
-
-        self.setAutoFillBackground(True)
-        self.setPalette(pal)
-        self.update()
 
 
     def colorPicker(self):
@@ -508,9 +489,6 @@ class ColorPicker(QPushButton):
 
         if picker.exec_():
             self.color = picker.currentColor().name()
-
-
-    color = property(getColor, setColor)
 
 # ------------------------------------------------------------------------------
 
