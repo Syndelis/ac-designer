@@ -456,10 +456,12 @@ class MainWindow(QMainWindow):
 
             msg.exec()
 
-    
+
     def colorizeAction(self, cmname):
 
         def inner():
+
+            if len(self.canvas.graph.nodes) == 0: return
 
             cm = get_cmap(cmname)
             rate = 1 / len(self.canvas.graph.nodes)

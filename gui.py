@@ -106,7 +106,7 @@ class Canvas(QLabel):
 
 
     def editObject(self):
-        
+
         self.main.launchEditor(self.menu_selection)
 
 
@@ -246,7 +246,7 @@ class Canvas(QLabel):
         new = QFont(old)
         new.setPointSize(6)
         painter.setFont(new)
-        
+
         it = [
             x - self.cam.x
             for x in range(self.cam.x, self.cam.x + self.width())
@@ -271,7 +271,7 @@ class Canvas(QLabel):
         ]
 
         for y in it:
-            
+
             long = (y + self.cam.y) % 100 == 0
             if long:
                 painter.drawText(
@@ -323,7 +323,7 @@ class Canvas(QLabel):
     # ------------------------------------
 
     def resizeEvent(self, e):
-        
+
         width = e.size().width()
         height = e.size().height()
         canvas = QPixmap(width, height)

@@ -50,7 +50,7 @@ Drawable classes
 class Condition(XMLable):
 
     def __init__(self, state: int, op: Op, amnt: int):
-        
+
         self.state = state # Node ID
         self.op = op
         self.amnt = amnt
@@ -103,7 +103,7 @@ class Base:
 # ------------------------------------------------------------------------------
 
 class Node(Base, XMLable):
-    
+
     lit = []
     radius = 40
 
@@ -293,7 +293,7 @@ class Graph:
     # ------------------------------------
 
     def saveXML(self, filename="test.xml"):
-        
+
         doc = DOM.createDocument(None, "AC", None)
         nodes = doc.createElement("nodes")
 
@@ -334,7 +334,7 @@ class Graph:
 
             g.addNode(n, newid=False)
 
-        
+
         for edge in doc.documentElement.getElementsByTagName("edge"):
 
             attr = edge.attributes
@@ -347,9 +347,9 @@ class Graph:
             e.name = attr['name'].value
             e.probability = int(attr['probability'].value)
             e.offset = float(attr['offset'].value)
-            
+
             for condition in edge.getElementsByTagName("condition"):
-                
+
                 attr = condition.attributes
                 e.addCondition(
                     int(attr['state'].value),

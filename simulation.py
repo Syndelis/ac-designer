@@ -10,6 +10,9 @@ from PyQt5.QtCore import QRect, QRectF, Qt
 # Data
 from data import Graph, Node, Edge, Condition
 
+# Math
+from math import floor
+
 # ------------------------------------------------------------------------------
 """
 Auxiliary Functions
@@ -93,18 +96,18 @@ class SimulationFrame(QLabel):
         self.pixmap().fill(QColor('white'))
         painter = QPainter(self.pixmap())
         painter.setRenderHints(QPainter.Antialiasing|QPainter.TextAntialiasing)
-        
+
         painter.setPen(Qt.darkGray)
-        pw = w / self._dimension
-        ph = h / self._dimension
+        self.pw = w / self._dimension
+        self.ph = h / self._dimension
 
         for y in range(self._dimension):
             for x in range(self._dimension):
 
-                _x = x*pw
-                _y = y*ph
+                _x = x*self.pw
+                _y = y*self.ph
 
-                rect = QRectF(_x, _y, _x + pw, _y + ph)
+                rect = QRectF(_x, _y, _x + self.pw, _y + self.ph)
                 el = self.initial[x][y]
 
                 painter.setBrush(QColor(self.graph.nodes[el].color))
@@ -123,7 +126,21 @@ class SimulationFrame(QLabel):
         self.redraw()
         self.parent().update()
 
-    
+
+    def updateCell(self, point, ind: int):
+
+        p = self.mapFromParent(point)
+        x, y = p.x(), p.y()
+
+        if x >= 0 and x <= self.width() and y >= 0 and y <= self.height():
+            i, j = floor(x / self.pw), floor(y / self.ph)
+
+            self.initial[i][j] = ind
+
+            self.redraw()
+            self.parent().update()
+
+
     def getDimension(self):
         return self._dimension
 
@@ -138,7 +155,7 @@ class SimulationFrame(QLabel):
 class SimulationDistribution(QWidget):
 
     def __init__(self, names_colors):
-        
+
         super(type(self), self).__init__()
 
         self.names_colors = names_colors
@@ -204,29 +221,31 @@ class SimulationDistribution(QWidget):
     def updateButtons(self, ind):
 
         def inner():
-            
+
             if self.old_check is not None:
 
-                if self.old_check is not self.buttons[ind]:
-                    self.old_check.setChecked(False)
+                self.buttons[self.old_check].setIcon(QIcon())
 
-                self.old_check.setIcon(QIcon())
+                if self.old_check is not ind:
+                    self.buttons[self.old_check].setChecked(False)
+
+                else: self.old_check = None
+
 
             if self.buttons[ind].isChecked():
 
-                print('yes')
-                self.old_check = self.buttons[ind]
-                self.old_check.setIcon(QIcon.fromTheme("media-record"))
-                print(self.old_check.icon())
+                self.old_check = ind
+                self.buttons[self.old_check]\
+                    .setIcon(QIcon.fromTheme("media-record"))
 
         return inner
 
 # ------------------------------------------------------------------------------
 
 class SimulationWindow(QWidget):
-    
+
     def __init__(self, graph: Graph):
-        
+
         super(type(self), self).__init__()
         self.graph = graph
 
@@ -239,7 +258,7 @@ class SimulationWindow(QWidget):
     # --------------------------------------
 
     def initWidgets(self):
-        
+
         main_layout = QHBoxLayout()
 
         lay = QVBoxLayout()
@@ -249,9 +268,11 @@ class SimulationWindow(QWidget):
         wid.setMaximumWidth(250)
 
         # Buttons, sliders, etc...
-        lay.addWidget(SimulationDistribution(
+
+        self.dist = SimulationDistribution(
             (node.name, node.color) for node in self.graph.nodes
-        ))
+        )
+        lay.addWidget(self.dist)
 
         wid.setLayout(lay)
         main_layout.addWidget(wid)
@@ -268,11 +289,14 @@ class SimulationWindow(QWidget):
 
     def mousePressEvent(self, e):
         self.button = e.button()
+        self.mouseMoveEvent(e)
 
-    
+
     def mouseMoveEvent(self, e):
-        pass
 
-    
+        if self.button and self.dist.old_check is not None:
+            self.canvas.updateCell(e.pos(), self.dist.old_check)
+
+
     def mouseReleaseEvent(self, e):
         self.button = 0
