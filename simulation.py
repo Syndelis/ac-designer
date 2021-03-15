@@ -12,6 +12,7 @@ from data import Graph, Node, Edge, Condition
 
 # Math
 from math import floor
+from random import choices
 
 # ------------------------------------------------------------------------------
 """
@@ -127,6 +128,19 @@ class SimulationFrame(QLabel):
         self.parent().update()
 
 
+    def randomize(self, weights):
+
+        c = list(range(len(self.graph.nodes)))
+
+        self.initial = [
+            choices(c, weights, k=self._dimension)
+            for _ in range(self._dimension)
+        ]
+
+        self.redraw()
+        self.parent().update()
+
+
     def updateCell(self, point, ind: int):
 
         p = self.mapFromParent(point)
@@ -154,7 +168,7 @@ class SimulationFrame(QLabel):
 
 class SimulationDistribution(QWidget):
 
-    def __init__(self, names_colors):
+    def __init__(self, names_colors, _parent):
 
         super(type(self), self).__init__()
 
@@ -163,6 +177,7 @@ class SimulationDistribution(QWidget):
         self.buttons = []
 
         self.old_check = None
+        self._parent = _parent
 
         # --------------------------------------
 
@@ -175,13 +190,16 @@ class SimulationDistribution(QWidget):
         main_layout = QGridLayout()
         main_layout.setVerticalSpacing(1)
 
+        s = f"{100 / len(self.names_colors):.1f}%"
+
         for i, name_color in enumerate(self.names_colors):
 
             name, color = name_color
 
-            lab = QLabel("0.0%")
+            lab = QLabel(s)
 
             sl = QSlider(Qt.Horizontal)
+            sl.setValue(100)
             sl.valueChanged.connect(self.updateSliders)
 
             row = i*2
@@ -199,7 +217,6 @@ class SimulationDistribution(QWidget):
 
             self.sliders.append((sl, lab))
 
-
         self.setLayout(main_layout)
 
 
@@ -215,7 +232,7 @@ class SimulationDistribution(QWidget):
             for _, lab in self.sliders:
                 lab.setText("0.0%")
 
-        self.parent().update()
+        self._parent.randomize()
 
 
     def updateButtons(self, ind):
@@ -239,6 +256,12 @@ class SimulationDistribution(QWidget):
                     .setIcon(QIcon.fromTheme("media-record"))
 
         return inner
+
+
+    def getWeights(self):
+
+        total = sum(sl.value() for sl, _ in self.sliders)
+        return [sl.value() / total for sl, _ in self.sliders]
 
 # ------------------------------------------------------------------------------
 
@@ -270,9 +293,14 @@ class SimulationWindow(QWidget):
         # Buttons, sliders, etc...
 
         self.dist = SimulationDistribution(
-            (node.name, node.color) for node in self.graph.nodes
+            [(node.name, node.color) for node in self.graph.nodes],
+            self
         )
         lay.addWidget(self.dist)
+
+        btn = QPushButton("Generate")
+        btn.clicked.connect(self.randomize)
+        lay.addWidget(btn)
 
         wid.setLayout(lay)
         main_layout.addWidget(wid)
@@ -282,8 +310,12 @@ class SimulationWindow(QWidget):
         main_layout.addWidget(self.canvas)
         self.setLayout(main_layout)
 
-        self.canvas.redraw()
-        self.update()
+        self.randomize()
+
+    # ------------------------------------
+
+    def randomize(self):
+        self.canvas.randomize(self.dist.getWeights())
 
     # ------------------------------------
 
