@@ -23,10 +23,10 @@ Subtable = CodeGen({
     ),
 
     # For every different node
-    "node": Template("\t\tif s == $src:"),
+    "node": Template("\t\tif s == $src:$code\n\t\t\tpass"),
 
     # For every node's edge
-    "edge": Template("\t\t\tif $conditions:\n\t\t\t\treturn $dst"),
+    "edge": Template("\t\t\tif ($conditions)$prob:\n\t\t\t\treturn $dst"),
 
     # For every edge's condition
     "condition": Template("(nhood[$state] $op $amnt)"),
@@ -38,6 +38,9 @@ Subtable = CodeGen({
 
     # CONDITIONAL
     "initialCondition": Template("initial_condition = $list"),
-    "instantiateInitialCondition": Template("c = $name(30, random_values=False, values=initial_condition[::-1])")
+    "instantiateInitialCondition": Template("c = $name(30, random_values=False, values=initial_condition[::-1])"),
+    
+    "inconditionalEdge": Template("\t\t\treturn $dst"),
+    "prob": Template("random() < $percentage")
 
 })

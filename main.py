@@ -465,7 +465,7 @@ class MainWindow(QMainWindow):
             rate = 1 / len(self.canvas.graph.nodes)
 
             for i, node in enumerate(self.canvas.graph.nodes):
-                node.color = QColor(*cm(rate*i, bytes=True, alpha=255))
+                node.color = QColor(*cm(rate*i, bytes=True, alpha=255)).name()
 
             self.canvas.redraw()
             self.update()

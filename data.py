@@ -163,9 +163,9 @@ class Node(Base, XMLable):
     # ------------------------------------
 
     def toCode(self) -> str:
-        
-        return Subtable.node(src=self.id) + "\n" +\
-                "\n".join(edge.toCode() for edge in self.outgoing)
+
+        return Subtable.node(src=self.id, code="\n" +\
+                "\n".join(edge.toCode() for edge in self.outgoing))
 
 
 # ------------------------------------------------------------------------------
@@ -240,10 +240,23 @@ class Edge(Base, XMLable):
 
     def toCode(self) -> str:
 
-        return Subtable.edge(
-            conditions=" or ".join(cond.toCode() for cond in self.conditions),
+        p = Subtable.prob(percentage=self.probability/100)\
+            if self.probability < 100 else ''
+
+        if len(self.conditions):
+            return Subtable.edge(
+                conditions=" or ".join(cond.toCode() for cond in self.conditions),
+                prob=" and " + p,
+                dst=self.nodes[1].id
+            )
+
+        elif p:return Subtable.edge(
+            conditions=p,
+            prob='',
             dst=self.nodes[1].id
         )
+
+        else: return Subtable.inconditionalEdge(dst=self.nodes[1].id, prob=p)
 
 # -----------------------------------------------------------------------------
 
@@ -304,17 +317,6 @@ class Graph:
         t = type(obj)
         if   t is Node: self.removeNode(obj)
         elif t is Edge: self.removeEdge(obj)
-
-    # ------------------------------------
-
-    # TODO
-    def toCode(self) -> str:
-
-        # for node in self.nodes:
-        #   for edge in node.edges:
-        #       if not edge.processed:
-
-        pass
 
     # ------------------------------------
 
