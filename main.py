@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QColor, QFont, QIcon, QPainter, QPen
 
 from gui import Canvas, EventHandler
-from simulation import SimulationWindow, ColorButton
+from simulation import SimulationAndPlot, ColorButton
 
 # Data
 from vector import vec, Vector
@@ -292,13 +292,11 @@ class MainWindow(QMainWindow):
 
             color_menu.addMenu(c)
 
-        # Simulation Menu ------------------
-
-        run_act = QAction('Run', self)
+        # Simulation Action ----------------
+        run_act = QAction('Simulate', self)
         run_act.triggered.connect(self.runAction)
 
-        simulation_menu = menubar.addMenu('Simulation')
-        simulation_menu.addAction(run_act)
+        menubar.addAction(run_act)
 
         self.initWidgets()
 
@@ -444,7 +442,7 @@ class MainWindow(QMainWindow):
 
         if len(self.canvas.graph.nodes) > 1:
 
-            self.simulation_window = SimulationWindow(self.canvas.graph)
+            self.simulation_window = SimulationAndPlot(self.canvas.graph)
             self.simulation_window.show()
 
 

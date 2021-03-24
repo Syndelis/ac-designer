@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Union
 import abc
 import xml.dom.minidom as xml
+from codeGenerator import Subtable
 
 # Misc
 from time import time
@@ -29,6 +30,9 @@ class XMLable(abc.ABC):
 
     @abc.abstractmethod
     def toXML(self, doc: xml.Document) -> xml.Element: pass
+
+    @abc.abstractmethod
+    def toCode(self) -> str: pass
 
 # ------------------------------------------------------------------------------
 
@@ -65,6 +69,12 @@ class Condition(XMLable):
         el.setAttribute("amnt", f"{self.amnt}")
 
         return el
+
+    # ------------------------------------
+
+    def toCode(self) -> str:
+        return Subtable.condition(
+            state=self.state, op=self.op.value, amnt=self.amnt)
 
 # ------------------------------------------------------------------------------
 
@@ -150,6 +160,13 @@ class Node(Base, XMLable):
 
         return el
 
+    # ------------------------------------
+
+    def toCode(self) -> str:
+        
+        return Subtable.node(src=self.id) + "\n" +\
+                "\n".join(edge.toCode() for edge in self.outgoing)
+
 
 # ------------------------------------------------------------------------------
 
@@ -218,6 +235,15 @@ class Edge(Base, XMLable):
 
         el.appendChild(conds)
         return el
+
+    # ------------------------------------
+
+    def toCode(self) -> str:
+
+        return Subtable.edge(
+            conditions=" or ".join(cond.toCode() for cond in self.conditions),
+            dst=self.nodes[1].id
+        )
 
 # -----------------------------------------------------------------------------
 
@@ -360,6 +386,49 @@ class Graph:
         Node.unhighlight()
         Edge.unhighlight()
         return g
+
+    # ------------------------------------
+
+    def _codeClass(self, name) -> str:
+
+        return "\n".join((
+
+            Subtable.namesetup(name=name),
+            "\n".join(node.toCode() for node in self.nodes),
+            Subtable.end()
+
+        ))
+
+    def generateCode(self, cond=None) -> str:
+
+        if cond:
+
+            return "\n".join((
+                Subtable.imports(),
+
+                self._codeClass("Test"),
+
+                Subtable.initialCondition(list=str(cond)),
+                Subtable.instantiateInitialCondition(name="Test"),
+                Subtable.plot(
+                    name="Test",
+                    colors=str([node.color for node in self.nodes])
+                )
+            ))
+
+        else:
+
+            return "\n".join((
+                Subtable.imports(),
+
+                self._codeClass("Teste"),
+
+                Subtable.instantiate(name="Test", statecount=len(self.nodes)),
+                Subtable.plot(
+                    name="Test",
+                    colors=str([node.color for node in self.nodes])
+                )
+            ))
 
 
 # ------------------------------------------------------------------------------

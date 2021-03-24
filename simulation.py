@@ -12,7 +12,21 @@ from data import Graph, Node, Edge, Condition
 
 # Math
 from math import floor
-from random import choices
+from random import choices, random
+
+# Plotting
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
+from collections import Counter
+
+try:
+    from ca import *
+
+except (ImportError, ModuleNotFoundError):
+    print(
+        'Module `ca` is missing. In the future, this will only disable '
+        'live simulating. However, at this time, it is required'
+    )
 
 # ------------------------------------------------------------------------------
 """
@@ -267,13 +281,12 @@ class SimulationDistribution(QWidget):
 
 class SimulationWindow(QWidget):
 
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph, parent=None):
 
-        super(type(self), self).__init__()
+        super(type(self), self).__init__(parent)
         self.graph = graph
 
         self.button = 0
-
         self.setMouseTracking(True)
 
         self.initWidgets()
@@ -310,6 +323,22 @@ class SimulationWindow(QWidget):
         main_layout.addWidget(self.canvas)
         self.setLayout(main_layout)
 
+        # Export Menu ------------------
+
+        menubar = QMenuBar(self)
+
+        code_act = QAction('... to Code', self)
+        code_act.triggered.connect(self.toCode)
+
+        pdf_act = QAction('... to PDF', self)
+        pdf_act.triggered.connect(self.toPDF)
+
+        export_menu = menubar.addMenu('Export')
+        export_menu.addAction(code_act)
+        export_menu.addAction(pdf_act)
+
+        self.layout().setMenuBar(menubar)
+
         self.randomize()
 
     # ------------------------------------
@@ -332,3 +361,150 @@ class SimulationWindow(QWidget):
 
     def mouseReleaseEvent(self, e):
         self.button = 0
+
+    # ------------------------------------
+
+    def toCode(self):
+
+        l = []
+        for _l in self.canvas.initial:
+            l.extend(_l)
+
+        with open("TEst.py", "w") as f:
+            f.write(self.graph.generateCode(l))
+
+    def toPDF(self):
+        self.parent().setCurrentIndex(1)
+
+# ------------------------------------------------------------------------------
+
+class PlotWindow(QWidget):
+    
+    def __init__(self, graph: Graph, initialFunc, parent=None):
+        super(type(self), self).__init__(parent)
+
+        self.graph = graph
+        self.initialFunc = initialFunc
+        self.stack = QStackedWidget()
+
+        self._gen = None
+
+        # for i in range(5):
+        #     fig = plt.figure()
+        #     data = [random() for i in range(10)]
+
+        #     ax = fig.add_subplot(111)
+        #     ax.plot(data, '*-')
+
+        #     self.stack.addWidget(FigureCanvas(fig))
+        #     plt.close(fig)
+
+        self.initWidgets()
+
+
+    def initWidgets(self):
+
+        lay = QVBoxLayout()
+        lay.addWidget(self.stack)
+
+        w = QWidget()
+        l = QHBoxLayout()
+
+        self.back = QPushButton("Back")
+        self.back.clicked.connect(self.btnBack)
+        self.back.setEnabled(False)
+        l.addWidget(self.back)
+
+        self.fwd = QPushButton("Forward")
+        self.fwd.clicked.connect(self.btnFwd)
+        l.addWidget(self.fwd)
+
+        w.setLayout(l)
+        lay.addWidget(w)
+
+        self.setLayout(lay)
+
+
+    def btnBack(self):
+        
+        if ((i := self.stack.currentIndex()) > 0):
+            self.stack.setCurrentIndex(i-1)
+
+            if i == 1: self.back.setEnabled(False)
+            self.fwd.setEnabled(True)
+
+
+    def btnFwd(self):
+
+        if ((i := self.stack.currentIndex()) < self.stack.count()-1):
+            self.stack.setCurrentIndex(i+1)
+
+            if i+1 >= self.stack.count()-1: self.fwd.setEnabled(False)
+            self.back.setEnabled(True)
+
+
+        else:
+            try:
+                self.stack.addWidget(FigureCanvas(next(self._gen)))
+                self.stack.setCurrentIndex(i+1)
+                self.back.setEnabled(True)
+
+            except StopIteration:
+                self.fwd.setEnabled(False)
+                self.back.setEnabled(True)
+
+
+    def showEvent(self, e):
+        
+        while (wid := self.stack.widget(0)):
+            self.stack.removeWidget(wid)
+
+        if self._gen: del self._gen
+
+        exec(self.graph._codeClass('_TMPCAClass'), globals(), globals())
+
+        _TMPCAInst = _TMPCAClass(
+            30, random_values=False, values=self.initialFunc())
+
+        self._gen = plotPart(
+            _TMPCAInst, N=50,
+            colors=[node.color for node in self.graph.nodes],
+        )
+
+        self.stack.addWidget(FigureCanvas(next(self._gen)))
+        self.stack.setCurrentIndex(0)
+
+        self.fwd.setEnabled(True)
+        self.back.setEnabled(False)
+
+
+# ------------------------------------------------------------------------------
+
+class SimulationAndPlot(QStackedWidget):
+
+    def __init__(self, graph: Graph):
+
+        super(type(self), self).__init__()
+
+        self.sim = SimulationWindow(graph, self)
+        self.addWidget(self.sim)
+        self.addWidget(
+            PlotWindow(graph, self.getInitial, self)
+        )
+
+
+    def getInitial(self):
+        l = []
+
+        for _l in self.sim.canvas.initial:
+            l.extend(_l)
+
+        return l[::-1]
+
+
+    def closeEvent(self, e):
+        if (i := self.currentIndex()) > 0:
+            self.setCurrentIndex(i-1)
+            e.ignore()
+
+        else: super(type(self), self).closeEvent(e)
