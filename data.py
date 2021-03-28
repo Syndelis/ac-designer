@@ -114,6 +114,8 @@ class Base:
 
 class Node(Base, XMLable):
 
+    edgeReorder = lambda e: e.priority
+
     lit = []
     radius = 40
 
@@ -164,8 +166,8 @@ class Node(Base, XMLable):
 
     def toCode(self) -> str:
 
-        return Subtable.node(src=self.id, code="\n" +\
-                "\n".join(edge.toCode() for edge in self.outgoing))
+        return Subtable.node(name=self.name, src=self.id, code="\n" +\
+                "\n\n".join(edge.toCode() for edge in self.outgoing))
 
 
 # ------------------------------------------------------------------------------
@@ -181,6 +183,7 @@ class Edge(Base, XMLable):
     def __init__(self, node0: Node, node1: Node, highlit=True, register=True):
 
         self.nodes = node0, node1
+        self.priority = len(node0.outgoing)
 
         if register: self.register()
 
@@ -228,6 +231,7 @@ class Edge(Base, XMLable):
         el.setAttribute("dst", f"{self.nodes[1].id}")
         el.setAttribute("probability", f"{self.probability}")
         el.setAttribute("offset", f"{self.offset}")
+        el.setAttribute("priority", f"{self.priority}")
 
         conds = doc.createElement("conditions")
         for condition in self.conditions:
@@ -245,12 +249,14 @@ class Edge(Base, XMLable):
 
         if len(self.conditions):
             return Subtable.edge(
+                name=self.name,
                 conditions=" or ".join(cond.toCode() for cond in self.conditions),
-                prob=" and " + p,
+                prob=(" and " + p) if p else '',
                 dst=self.nodes[1].id
             )
 
-        elif p:return Subtable.edge(
+        elif p: return Subtable.edge(
+            name=self.name,
             conditions=p,
             prob='',
             dst=self.nodes[1].id
@@ -375,6 +381,9 @@ class Graph:
             e.name = attr['name'].value
             e.probability = int(attr['probability'].value)
             e.offset = float(attr['offset'].value)
+            e.priority = int(attr['priority'].value)
+
+            e.registered = True
 
             for condition in edge.getElementsByTagName("condition"):
 
@@ -384,6 +393,10 @@ class Graph:
                     Op(attr['op'].value),
                     int(attr['amnt'].value)
                 )
+
+        g.edges.sort(key=Node.edgeReorder)
+        for node in g.nodes:
+            node.outgoing.sort(key=Node.edgeReorder)
 
         Node.unhighlight()
         Edge.unhighlight()
@@ -401,19 +414,19 @@ class Graph:
 
         ))
 
-    def generateCode(self, cond=None) -> str:
+    def generateCode(self, name="Test", cond=None) -> str:
 
         if cond:
 
             return "\n".join((
                 Subtable.imports(),
 
-                self._codeClass("Test"),
+                self._codeClass(name),
 
                 Subtable.initialCondition(list=str(cond)),
-                Subtable.instantiateInitialCondition(name="Test"),
+                Subtable.instantiateInitialCondition(name=name),
                 Subtable.plot(
-                    name="Test",
+                    name=name,
                     colors=str([node.color for node in self.nodes])
                 )
             ))
@@ -423,11 +436,11 @@ class Graph:
             return "\n".join((
                 Subtable.imports(),
 
-                self._codeClass("Teste"),
+                self._codeClass(name),
 
-                Subtable.instantiate(name="Test", statecount=len(self.nodes)),
+                Subtable.instantiate(name=name, statecount=len(self.nodes)),
                 Subtable.plot(
-                    name="Test",
+                    name=name,
                     colors=str([node.color for node in self.nodes])
                 )
             ))

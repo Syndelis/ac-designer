@@ -19,6 +19,10 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from collections import Counter
 
+# Sanitizing strings
+import unicodedata
+import re
+
 try:
     from ca import *
 
@@ -42,6 +46,26 @@ def formattedLabel(text: str) -> QLabel:
     else: s = text
 
     return QLabel(s)
+
+
+def slugify(value, allow_unicode=False):
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').\
+            decode('ascii')
+
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_').replace('-', '_')
 
 # ------------------------------------------------------------------------------
 """
@@ -366,12 +390,20 @@ class SimulationWindow(QWidget):
 
     def toCode(self):
 
-        l = []
-        for _l in self.canvas.initial:
-            l.extend(_l)
+        filename = QFileDialog.getSaveFileName(
+            self, "Export Code", ".", "Python (*.py)")
 
-        with open("TEst.py", "w") as f:
-            f.write(self.graph.generateCode(l))
+        if filename[0]:
+
+            modelname = filename[0].split('/')[-1]
+            modelname = slugify('_'.join(modelname.split('.')[:-1]))
+
+            l = []
+            for _l in self.canvas.initial:
+                l.extend(_l)
+
+            with open(filename[0], "w") as f:
+                f.write(self.graph.generateCode(name=modelname, cond=l))
 
     def toPDF(self):
         self.parent().setCurrentIndex(1)
@@ -389,15 +421,14 @@ class PlotWindow(QWidget):
 
         self._gen = None
 
-        # for i in range(5):
-        #     fig = plt.figure()
-        #     data = [random() for i in range(10)]
+        self.shortRight = QShortcut(Qt.Key_Right, self)
+        self.shortLeft  = QShortcut(Qt.Key_Left , self)
 
-        #     ax = fig.add_subplot(111)
-        #     ax.plot(data, '*-')
+        self.shortRight.activated.connect(self.btnFwd )
+        self.shortLeft .activated.connect(self.btnBack)
 
-        #     self.stack.addWidget(FigureCanvas(fig))
-        #     plt.close(fig)
+        self.shortRight.setEnabled(False)
+        self.shortLeft .setEnabled(False)
 
         self.initWidgets()
 
@@ -430,8 +461,9 @@ class PlotWindow(QWidget):
         if ((i := self.stack.currentIndex()) > 0):
             self.stack.setCurrentIndex(i-1)
 
-            if i == 1: self.back.setEnabled(False)
-            self.fwd.setEnabled(True)
+            if i == 1: self.enableBack(False)#self.back.setEnabled(False)
+            # self.fwd.setEnabled(True)
+            self.enableFwd(True)
 
 
     def btnFwd(self):
@@ -439,19 +471,25 @@ class PlotWindow(QWidget):
         if ((i := self.stack.currentIndex()) < self.stack.count()-1):
             self.stack.setCurrentIndex(i+1)
 
-            if i+1 >= self.stack.count()-1: self.fwd.setEnabled(False)
-            self.back.setEnabled(True)
+            # self.back.setEnabled(True)
+            self.enableBack(True)
 
 
         else:
             try:
                 self.stack.addWidget(FigureCanvas(next(self._gen)))
                 self.stack.setCurrentIndex(i+1)
-                self.back.setEnabled(True)
+                # self.back.setEnabled(True)
+                # self.enableBack(True)
 
             except StopIteration:
-                self.fwd.setEnabled(False)
-                self.back.setEnabled(True)
+                # self.fwd.setEnabled(False)
+                # self.back.setEnabled(True)
+                self.enableFwd(False)
+                # self.enableBack(True)
+
+            finally:
+                self.enableBack(True)
 
 
     def showEvent(self, e):
@@ -474,8 +512,26 @@ class PlotWindow(QWidget):
         self.stack.addWidget(FigureCanvas(next(self._gen)))
         self.stack.setCurrentIndex(0)
 
+        self.shortRight.setEnabled(True)
+        self.shortLeft .setEnabled(True)
+
         self.fwd.setEnabled(True)
         self.back.setEnabled(False)
+
+
+    def hideEvent(self, e):
+        self.enableBack(False)
+        self.enableFwd (False)
+
+
+    def enableFwd(self, b):
+        self.shortRight.setEnabled(b)
+        self.fwd.setEnabled(b)
+
+
+    def enableBack(self, b):
+        self.shortLeft.setEnabled(b)
+        self.back.setEnabled(b)
 
 
 # ------------------------------------------------------------------------------
@@ -488,9 +544,7 @@ class SimulationAndPlot(QStackedWidget):
 
         self.sim = SimulationWindow(graph, self)
         self.addWidget(self.sim)
-        self.addWidget(
-            PlotWindow(graph, self.getInitial, self)
-        )
+        self.addWidget(PlotWindow(graph, self.getInitial, self))
 
 
     def getInitial(self):

@@ -583,13 +583,11 @@ class EditNodeWindow(QWidget):
         self.ctx.canvas.redraw()
         self.ctx.update()
 
-        edges = [
-            self.list.item(i).data(DATA_INDEX)
-            for i in range(self.list.count())
-        ]
+        for ind, i in enumerate(range(self.list.count())):
+            e = self.list.item(i).data(DATA_INDEX)
+            e.priority = ind
 
-        for edge in edges: self.ctx.canvas.graph.edges.remove(edge)
-        self.ctx.canvas.graph.edges.extend(edges)
+        self.target.outgoing.sort(key=Node.edgeReorder)
 
         self.close()
 
@@ -841,10 +839,7 @@ class EditEdgeWindow(QWidget):
 
     def cancelBtn(self):
 
-        # TODO: What happens when deleting a registered edge?
         del self.target
-        # Needs an 'unregister' command in order to actually remove it
-        # Better done in a menu context rather than on the editor itself
         self.close()
 
 
