@@ -40,6 +40,7 @@ Program Classes
 class Move(EventHandler):
 
     selection = None
+    delta = None
 
     @classmethod
     def getName(cls): return "Move"
@@ -51,17 +52,22 @@ class Move(EventHandler):
     @classmethod
     def mousePressEvent(cls, ctx, e):
 
-        cls.selection = ctx.canvas.getAt(ctx.transformCoords(e.x(), e.y()))
+        mouse = ctx.transformCoords(e.x(), e.y())
+        cls.selection = ctx.canvas.getAt(mouse)
         t = type(cls.selection)
 
         if t in (Node, Edge):
             t.unhighlight()
             cls.selection.setHighlight(True)
+            
+            if t is Node:
+                cls.delta = mouse - cls.selection.pos
 
 
     @classmethod
     def mouseReleaseEvent(cls, ctx, e):
         cls.selection = None
+        cls.delta = None
         Node.unhighlight()
         Edge.unhighlight()
 
@@ -73,7 +79,7 @@ class Move(EventHandler):
         mouse = ctx.transformCoords(e.x(), e.y())
 
         if t is Node:
-            cls.selection.pos = mouse + ctx.canvas.cam
+            cls.selection.pos = mouse + ctx.canvas.cam - cls.delta
 
         elif t is Edge:
 

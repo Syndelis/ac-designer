@@ -16,6 +16,7 @@ from random import choices, random
 
 # Plotting
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from collections import Counter
 
@@ -348,18 +349,18 @@ class SimulationWindow(QWidget):
         self.setLayout(main_layout)
 
         # Export Menu ------------------
-
         menubar = QMenuBar(self)
-
-        code_act = QAction('... to Code', self)
+        
+        code_act = QAction('Export to Code', self)
         code_act.triggered.connect(self.toCode)
 
-        pdf_act = QAction('... to PDF', self)
-        pdf_act.triggered.connect(self.toPDF)
+        sim_act = QAction('Simulate in Place', self)
+        sim_act.triggered.connect(self.simulate)
 
-        export_menu = menubar.addMenu('Export')
-        export_menu.addAction(code_act)
-        export_menu.addAction(pdf_act)
+        file_menu = menubar.addMenu('File')
+
+        file_menu.addAction(code_act)
+        file_menu.addAction(sim_act )
 
         self.layout().setMenuBar(menubar)
 
@@ -405,7 +406,7 @@ class SimulationWindow(QWidget):
             with open(filename[0], "w") as f:
                 f.write(self.graph.generateCode(name=modelname, cond=l))
 
-    def toPDF(self):
+    def simulate(self):
         self.parent().setCurrentIndex(1)
 
 # ------------------------------------------------------------------------------
@@ -455,14 +456,23 @@ class PlotWindow(QWidget):
 
         self.setLayout(lay)
 
+        # Export to PDF Action -------------
+
+        menubar = QMenuBar(self)
+        pdf_act = QAction('Export to PDF', self)
+        pdf_act.triggered.connect(self.toPDF)
+
+        menubar.addAction(pdf_act)
+        self.layout().setMenuBar(menubar)
+
+
 
     def btnBack(self):
         
         if ((i := self.stack.currentIndex()) > 0):
             self.stack.setCurrentIndex(i-1)
 
-            if i == 1: self.enableBack(False)#self.back.setEnabled(False)
-            # self.fwd.setEnabled(True)
+            if i == 1: self.enableBack(False)
             self.enableFwd(True)
 
 
@@ -471,7 +481,6 @@ class PlotWindow(QWidget):
         if ((i := self.stack.currentIndex()) < self.stack.count()-1):
             self.stack.setCurrentIndex(i+1)
 
-            # self.back.setEnabled(True)
             self.enableBack(True)
 
 
@@ -479,14 +488,9 @@ class PlotWindow(QWidget):
             try:
                 self.stack.addWidget(FigureCanvas(next(self._gen)))
                 self.stack.setCurrentIndex(i+1)
-                # self.back.setEnabled(True)
-                # self.enableBack(True)
 
             except StopIteration:
-                # self.fwd.setEnabled(False)
-                # self.back.setEnabled(True)
                 self.enableFwd(False)
-                # self.enableBack(True)
 
             finally:
                 self.enableBack(True)
@@ -532,6 +536,29 @@ class PlotWindow(QWidget):
     def enableBack(self, b):
         self.shortLeft.setEnabled(b)
         self.back.setEnabled(b)
+
+
+    def toPDF(self):
+        
+        filename = QFileDialog.getSaveFileName(
+            self, "Export PDF", ".", "Portable Document Format (*.pdf)")
+
+        if filename[0]:
+
+            with PdfPages(filename[0]) as pdf:
+                for i in range(self.stack.count()):
+                    fig = self.stack.widget(i).figure
+                    fig.set_size_inches(10, 7)
+
+                    pdf.savefig(fig)
+
+                try:
+                    while (fig := next(self._gen)):
+                        pdf.savefig(fig)
+
+                except StopIteration: pass
+
+            self.parent().setCurrentIndex(0)
 
 
 # ------------------------------------------------------------------------------
