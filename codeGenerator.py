@@ -34,12 +34,14 @@ Subtable = CodeGen({
 
     # ONCE
     "end": Template("\t\treturn s\n\n"),
-    "instantiate": Template("c = $name(30, values=range($statecount))"),
-    "plot": Template("plot(c, N=50, colors=$colors, out='$name.pdf', graphic=True)"),
+    "instantiate": Template("c = $name(30, values=range($statecount), max=$statecount -1)"),
+    "plot": Template("plot(c, N=50, colors=$colors, names=$names, out='$name.pdf', graphic=True)"),
 
     # CONDITIONAL
     "initialCondition": Template("initial_condition = $list\n"),
-    "instantiateInitialCondition": Template("c = $name(30, random_values=False, values=initial_condition[::-1])"),
+    "instantiateInitialCondition": Template(
+        "c = $name(30, random_values=False, values=initial_condition[::-1], max=$statecount -1)"
+    ),
     
     "inconditionalEdge": Template("\t\t\treturn $dst"),
     "prob": Template("random() < $percentage")

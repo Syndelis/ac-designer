@@ -506,11 +506,14 @@ class PlotWindow(QWidget):
         exec(self.graph._codeClass('_TMPCAClass'), globals(), globals())
 
         _TMPCAInst = _TMPCAClass(
-            30, random_values=False, values=self.initialFunc())
+            30, random_values=False, values=self.initialFunc(),
+            max=len(self.graph.nodes)-1
+        )
 
         self._gen = plotPart(
             _TMPCAInst, N=50,
             colors=[node.color for node in self.graph.nodes],
+            names=[node.name for node in self.graph.nodes]
         )
 
         self.stack.addWidget(FigureCanvas(next(self._gen)))

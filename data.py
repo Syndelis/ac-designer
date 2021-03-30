@@ -424,10 +424,12 @@ class Graph:
                 self._codeClass(name),
 
                 Subtable.initialCondition(list=str(cond)),
-                Subtable.instantiateInitialCondition(name=name),
+                Subtable.instantiateInitialCondition(
+                    name=name, statecount=len(self.nodes)),
                 Subtable.plot(
                     name=name,
-                    colors=str([node.color for node in self.nodes])
+                    colors=str([node.color for node in self.nodes]),
+                    names=str([node.name for node in self.nodes])
                 )
             ))
 
@@ -441,7 +443,8 @@ class Graph:
                 Subtable.instantiate(name=name, statecount=len(self.nodes)),
                 Subtable.plot(
                     name=name,
-                    colors=str([node.color for node in self.nodes])
+                    colors=str([node.color for node in self.nodes]),
+                    names=str([node.name for node in self.nodes])
                 )
             ))
 
